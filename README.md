@@ -1,13 +1,17 @@
-# EMC Rupee Transaction Downloader
+#EMC Rupee Transaction Downloader
 
 A Java library for downloading rupee transactions from your [Rupee History](http://empireminecraft.com/rupees/transactions) page.
 
-try (RupeeTransactionReader reader = new RupeeTransactionReader.Builder("username", "password").build()) {
-  RupeeTransaction transaction;
-  int max = 10;
-  int count = 0;
-  while (count < max && (transaction = reader.next()) != null) {
-    count++;
-    System.out.println(count + ". " + transaction);
+```java
+//read the first 100 transactions
+String username = ...
+String password = ...
+int max = 100;
+try (RupeeTransactionReader reader = new RupeeTransactionReader.Builder(username, password).build()) {
+  for (int i = 1; i <= 100; i++) {
+    RupeeTransaction transaction = reader.next();
+    if (transaction == null) break;
+    System.out.println(i + ". " + transaction);
   }
 }
+```
