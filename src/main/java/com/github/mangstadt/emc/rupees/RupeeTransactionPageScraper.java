@@ -87,9 +87,13 @@ public class RupeeTransactionPageScraper {
 				String description = parseDescription(element);
 				RupeeTransaction.Builder builder = null;
 				for (RupeeTransactionScribe<?> scribe : scribes) {
-					builder = scribe.parse(description);
-					if (builder != null) {
-						break;
+					try {
+						builder = scribe.parse(description);
+						if (builder != null) {
+							break;
+						}
+					} catch (Exception e) {
+						logger.log(Level.WARNING, scribe.getClass().getSimpleName() + " scribe threw an excception. Skipping it.", e);
 					}
 				}
 				if (builder == null) {

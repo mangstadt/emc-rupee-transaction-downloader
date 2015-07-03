@@ -89,7 +89,7 @@ public class RupeeTransactionPageScraperTest {
 	}
 
 	@Test
-	public void custom_scribe_list() throws Exception {
+	public void custom_scribe() throws Exception {
 		Document document = load("transaction-page-sample.html");
 		RupeeTransactionPageScraper scraper = new RupeeTransactionPageScraper(Arrays.asList(new DonationTransactionScribe()));
 		RupeeTransactionPage page = scraper.scrape(document);
@@ -142,6 +142,58 @@ public class RupeeTransactionPageScraperTest {
 	}
 
 	@Test
+	public void scribe_throws_exception() throws Exception {
+		Document document = load("transaction-page-sample.html");
+		RupeeTransactionPageScraper scraper = new RupeeTransactionPageScraper(Arrays.asList(new ExceptionScribe()));
+		RupeeTransactionPage page = scraper.scrape(document);
+
+		assertEquals(Integer.valueOf(1), page.getPage());
+		assertEquals(Integer.valueOf(23_570), page.getTotalPages());
+		assertEquals(Integer.valueOf(1_284_678), page.getRupeeBalance());
+
+		Iterator<RupeeTransaction> it = page.getTransactions().iterator();
+
+		RupeeTransaction transaction = it.next();
+		assertEquals(new Date(1435429290000L), transaction.getTs());
+		assertEquals("Donation to Notch", transaction.getDescription());
+		assertEquals(32, transaction.getAmount());
+		assertEquals(1_284_678, transaction.getBalance());
+
+		ShopTransaction shopTransaction = (ShopTransaction) it.next();
+		assertEquals(new Date(1435428172000L), shopTransaction.getTs());
+		assertEquals("Player shop sold 4 Purple Dye to AnguishedCarpet", shopTransaction.getDescription());
+		assertEquals(28, shopTransaction.getAmount());
+		assertEquals(1_284_614, shopTransaction.getBalance());
+		assertEquals("AnguishedCarpet", shopTransaction.getShopCustomer());
+		assertNull(shopTransaction.getShopOwner());
+		assertEquals(-4, shopTransaction.getQuantity());
+		assertEquals("Purple Dye", shopTransaction.getItem());
+
+		PaymentTransaction paymentTransaction = (PaymentTransaction) it.next();
+		assertEquals(new Date(1435428159000L), paymentTransaction.getTs());
+		assertEquals("Payment to AnguishedCarpet", paymentTransaction.getDescription());
+		assertEquals(-32, paymentTransaction.getAmount());
+		assertEquals(1_284_586, paymentTransaction.getBalance());
+		assertEquals("AnguishedCarpet", paymentTransaction.getPlayer());
+		assertNull(paymentTransaction.getReason());
+
+		BonusFeeTransaction bonusFeeTransaction = (BonusFeeTransaction) it.next();
+		assertEquals(new Date(1435427901000L), bonusFeeTransaction.getTs());
+		assertEquals("Daily sign-in bonus", bonusFeeTransaction.getDescription());
+		assertEquals(400, bonusFeeTransaction.getAmount());
+		assertEquals(1_284_554, bonusFeeTransaction.getBalance());
+		assertEquals(BonusFeeType.SIGN_IN_BONUS, bonusFeeTransaction.getType());
+
+		transaction = it.next();
+		assertEquals(new SimpleDateFormat("MM/dd/yyyy HH:mm").parse("11/22/2012 21:54"), transaction.getTs());
+		assertEquals("Week-old transaction", transaction.getDescription());
+		assertEquals(-100, transaction.getAmount());
+		assertEquals(212_990, transaction.getBalance());
+
+		assertFalse(it.hasNext());
+	}
+
+	@Test
 	public void not_logged_in() throws Exception {
 		Document document = load("transaction-page-not-logged-in.html");
 		RupeeTransactionPageScraper scraper = new RupeeTransactionPageScraper();
@@ -174,6 +226,13 @@ public class RupeeTransactionPageScraperTest {
 	private Document load(String file) throws IOException {
 		try (InputStream in = getClass().getResourceAsStream(file)) {
 			return Jsoup.parse(in, "UTF-8", "");
+		}
+	}
+
+	private static class ExceptionScribe extends RupeeTransactionScribe<DonationTransaction.Builder> {
+		@Override
+		public DonationTransaction.Builder parse(String description) {
+			throw new RuntimeException();
 		}
 	}
 
