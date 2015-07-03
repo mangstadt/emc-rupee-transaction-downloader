@@ -31,11 +31,11 @@ public interface EmcWebsiteConnection extends Closeable {
 
 	/**
 	 * Gets the list of players that are logged into a server.
-	 * @param serverNumber the server number
+	 * @param the EMC server
 	 * @return the players
 	 * @throws IOException
 	 */
-	List<String> getOnlinePlayers(int serverNumber) throws IOException;
+	List<String> getOnlinePlayers(EmcServer server) throws IOException;
 
 	/**
 	 * Gets the cookies that are associated with this connection.

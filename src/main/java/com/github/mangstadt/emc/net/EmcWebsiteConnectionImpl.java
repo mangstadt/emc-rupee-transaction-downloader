@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -29,6 +30,7 @@ import org.apache.http.util.EntityUtils;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 
+import com.google.common.collect.ImmutableMap;
 import com.google.common.net.UrlEscapers;
 
 /**
@@ -36,6 +38,22 @@ import com.google.common.net.UrlEscapers;
  * @author Michael Angstadt
  */
 public class EmcWebsiteConnectionImpl implements EmcWebsiteConnection {
+	private static final Map<EmcServer, Integer> serverNumbers;
+	static {
+		ImmutableMap.Builder<EmcServer, Integer> map = ImmutableMap.builder();
+		map.put(EmcServer.SMP1, 1);
+		map.put(EmcServer.SMP2, 2);
+		map.put(EmcServer.SMP3, 4);
+		map.put(EmcServer.SMP4, 5);
+		map.put(EmcServer.SMP5, 6);
+		map.put(EmcServer.SMP6, 7);
+		map.put(EmcServer.SMP7, 8);
+		map.put(EmcServer.SMP8, 9);
+		map.put(EmcServer.SMP9, 10);
+		map.put(EmcServer.UTOPIA, 3);
+		serverNumbers = map.build();
+	}
+
 	private final CloseableHttpClient client;
 	private final CookieStore cookieStore;
 
@@ -159,7 +177,8 @@ public class EmcWebsiteConnectionImpl implements EmcWebsiteConnection {
 	}
 
 	@Override
-	public List<String> getOnlinePlayers(int serverNumber) throws IOException {
+	public List<String> getOnlinePlayers(EmcServer server) throws IOException {
+		Integer serverNumber = serverNumbers.get(server);
 		String url = "http://empireminecraft.com/api/server-online-" + serverNumber + ".json";
 		HttpGet request = new HttpGet(url);
 		HttpResponse response = client.execute(request);
