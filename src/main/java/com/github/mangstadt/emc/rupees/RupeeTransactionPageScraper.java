@@ -17,10 +17,16 @@ import org.jsoup.nodes.Element;
 
 import com.github.mangstadt.emc.rupees.dto.RupeeTransaction;
 import com.github.mangstadt.emc.rupees.dto.RupeeTransactionPage;
-import com.github.mangstadt.emc.rupees.scribe.BonusFeeTransactionScribe;
+import com.github.mangstadt.emc.rupees.scribe.DailySigninBonusScribe;
+import com.github.mangstadt.emc.rupees.scribe.EggifyFeeScribe;
+import com.github.mangstadt.emc.rupees.scribe.HorseSummonFeeScribe;
+import com.github.mangstadt.emc.rupees.scribe.LockTransactionScribe;
+import com.github.mangstadt.emc.rupees.scribe.MailFeeScribe;
 import com.github.mangstadt.emc.rupees.scribe.PaymentTransactionScribe;
 import com.github.mangstadt.emc.rupees.scribe.RupeeTransactionScribe;
 import com.github.mangstadt.emc.rupees.scribe.ShopTransactionScribe;
+import com.github.mangstadt.emc.rupees.scribe.VaultFeeScribe;
+import com.github.mangstadt.emc.rupees.scribe.VoteBonusScribe;
 
 /**
  * Scrapes rupee transaction history HTML pages. This class is thread-safe.
@@ -36,7 +42,13 @@ public class RupeeTransactionPageScraper {
 	{
 		scribes.add(new ShopTransactionScribe());
 		scribes.add(new PaymentTransactionScribe());
-		scribes.add(new BonusFeeTransactionScribe());
+		scribes.add(new DailySigninBonusScribe());
+		scribes.add(new HorseSummonFeeScribe());
+		scribes.add(new MailFeeScribe());
+		scribes.add(new EggifyFeeScribe());
+		scribes.add(new LockTransactionScribe());
+		scribes.add(new VoteBonusScribe());
+		scribes.add(new VaultFeeScribe());
 	}
 
 	public RupeeTransactionPageScraper() {
@@ -106,9 +118,9 @@ public class RupeeTransactionPageScraper {
 				builder.balance(parseBalance(element));
 
 				transactions.add(builder.build());
-			} catch (Throwable t) {
+			} catch (Exception e) {
 				//skip the transaction if any of the fields cannot be properly parsed
-				logger.log(Level.WARNING, "Problem parsing rupee transaction, skipping.", t);
+				logger.log(Level.WARNING, "Problem parsing rupee transaction, skipping.", e);
 			}
 		}
 

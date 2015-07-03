@@ -19,8 +19,7 @@ import org.jsoup.nodes.Document;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import com.github.mangstadt.emc.rupees.dto.BonusFeeTransaction;
-import com.github.mangstadt.emc.rupees.dto.BonusFeeTransaction.BonusFeeType;
+import com.github.mangstadt.emc.rupees.dto.DailySigninBonus;
 import com.github.mangstadt.emc.rupees.dto.PaymentTransaction;
 import com.github.mangstadt.emc.rupees.dto.RupeeTransaction;
 import com.github.mangstadt.emc.rupees.dto.RupeeTransactionPage;
@@ -72,12 +71,11 @@ public class RupeeTransactionPageScraperTest {
 		assertEquals("AnguishedCarpet", paymentTransaction.getPlayer());
 		assertNull(paymentTransaction.getReason());
 
-		BonusFeeTransaction bonusFeeTransaction = (BonusFeeTransaction) it.next();
-		assertEquals(new Date(1435427901000L), bonusFeeTransaction.getTs());
-		assertEquals("Daily sign-in bonus", bonusFeeTransaction.getDescription());
-		assertEquals(400, bonusFeeTransaction.getAmount());
-		assertEquals(1_284_554, bonusFeeTransaction.getBalance());
-		assertEquals(BonusFeeType.SIGN_IN_BONUS, bonusFeeTransaction.getType());
+		DailySigninBonus dailySigninBonus = (DailySigninBonus) it.next();
+		assertEquals(new Date(1435427901000L), dailySigninBonus.getTs());
+		assertEquals("Daily sign-in bonus", dailySigninBonus.getDescription());
+		assertEquals(400, dailySigninBonus.getAmount());
+		assertEquals(1_284_554, dailySigninBonus.getBalance());
 
 		transaction = it.next();
 		assertEquals(new SimpleDateFormat("MM/dd/yyyy HH:mm").parse("11/22/2012 21:54"), transaction.getTs());
@@ -125,12 +123,11 @@ public class RupeeTransactionPageScraperTest {
 		assertEquals("AnguishedCarpet", paymentTransaction.getPlayer());
 		assertNull(paymentTransaction.getReason());
 
-		BonusFeeTransaction bonusFeeTransaction = (BonusFeeTransaction) it.next();
-		assertEquals(new Date(1435427901000L), bonusFeeTransaction.getTs());
-		assertEquals("Daily sign-in bonus", bonusFeeTransaction.getDescription());
-		assertEquals(400, bonusFeeTransaction.getAmount());
-		assertEquals(1_284_554, bonusFeeTransaction.getBalance());
-		assertEquals(BonusFeeType.SIGN_IN_BONUS, bonusFeeTransaction.getType());
+		DailySigninBonus dailySigninBonus = (DailySigninBonus) it.next();
+		assertEquals(new Date(1435427901000L), dailySigninBonus.getTs());
+		assertEquals("Daily sign-in bonus", dailySigninBonus.getDescription());
+		assertEquals(400, dailySigninBonus.getAmount());
+		assertEquals(1_284_554, dailySigninBonus.getBalance());
 
 		RupeeTransaction transaction = it.next();
 		assertEquals(new SimpleDateFormat("MM/dd/yyyy HH:mm").parse("11/22/2012 21:54"), transaction.getTs());
@@ -177,12 +174,11 @@ public class RupeeTransactionPageScraperTest {
 		assertEquals("AnguishedCarpet", paymentTransaction.getPlayer());
 		assertNull(paymentTransaction.getReason());
 
-		BonusFeeTransaction bonusFeeTransaction = (BonusFeeTransaction) it.next();
-		assertEquals(new Date(1435427901000L), bonusFeeTransaction.getTs());
-		assertEquals("Daily sign-in bonus", bonusFeeTransaction.getDescription());
-		assertEquals(400, bonusFeeTransaction.getAmount());
-		assertEquals(1_284_554, bonusFeeTransaction.getBalance());
-		assertEquals(BonusFeeType.SIGN_IN_BONUS, bonusFeeTransaction.getType());
+		DailySigninBonus dailySigninBonus = (DailySigninBonus) it.next();
+		assertEquals(new Date(1435427901000L), dailySigninBonus.getTs());
+		assertEquals("Daily sign-in bonus", dailySigninBonus.getDescription());
+		assertEquals(400, dailySigninBonus.getAmount());
+		assertEquals(1_284_554, dailySigninBonus.getBalance());
 
 		transaction = it.next();
 		assertEquals(new SimpleDateFormat("MM/dd/yyyy HH:mm").parse("11/22/2012 21:54"), transaction.getTs());
