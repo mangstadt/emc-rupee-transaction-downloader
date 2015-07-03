@@ -44,8 +44,7 @@ public class RupeeTransactionReader implements Closeable {
 	private final Map<Integer, RupeeTransactionPage> buffer = new HashMap<>();
 	private final Set<Integer> hashesOfReturnedTransactions = new HashSet<>();
 
-	private final EmcWebsiteConnectionFactory connectionFactory;
-	private final PageProducer pageProducer;
+	private final PageSource pageSource;
 	private final Integer startAtPage;
 	private final Date startAtDate;
 	private final int threads;
@@ -60,13 +59,12 @@ public class RupeeTransactionReader implements Closeable {
 	private boolean cancel = false, endOfStream = false;
 
 	private RupeeTransactionReader(Builder builder) throws IOException {
-		connectionFactory = builder.connectionFactory;
-		pageProducer = builder.pageProducer;
+		pageSource = builder.pageSource;
 		threads = builder.threads;
 		//TODO downgrade to 1.6
 
-		EmcWebsiteConnection connection = connectionFactory.createConnection();
-		RupeeTransactionPage firstPage = pageProducer.getPage(1, connection);
+		EmcWebsiteConnection connection = pageSource.createSession();
+		RupeeTransactionPage firstPage = pageSource.getPage(1, connection);
 
 		//get the date of the latest transaction so we know when we've reached the last transaction page
 		//(the first page is returned when you request a non-existent page number)
@@ -92,7 +90,7 @@ public class RupeeTransactionReader implements Closeable {
 			thread.setName(getClass().getSimpleName() + "-" + i);
 			thread.start();
 			if (i < threads - 1) {
-				connection = connectionFactory.recreateConnection(connection);
+				connection = pageSource.recreateConnection(connection);
 			}
 		}
 	}
@@ -114,7 +112,7 @@ public class RupeeTransactionReader implements Closeable {
 			int amount = nextAmount;
 			nextAmount /= 2;
 
-			RupeeTransactionPage page = pageProducer.getPage(curPage, connection);
+			RupeeTransactionPage page = pageSource.getPage(curPage, connection);
 			if (startDate.after(page.getFirstTransactionDate())) {
 				curPage -= amount;
 				continue;
@@ -196,7 +194,7 @@ public class RupeeTransactionReader implements Closeable {
 			 * happens, then it means that new transactions were added while
 			 * this class was downloading transaction pages. When a new
 			 * transaction is logged, the new transaction "bumps" all other
-			 * transactions down one. This causes duplicate transactions to be
+			 * transactions "down" one. This causes duplicate transactions to be
 			 * read.
 			 */
 			if (!hashesOfReturnedTransactions.add(transaction.hashCode())) {
@@ -236,24 +234,24 @@ public class RupeeTransactionReader implements Closeable {
 
 					RupeeTransactionPage transactionPage = null;
 					try {
-						transactionPage = pageProducer.getPage(pageNumber, connection);
+						transactionPage = pageSource.getPage(pageNumber, connection);
 					} catch (ConnectException e) {
 						//one user reported getting connection errors at various points while trying to download 12k pages: http://empireminecraft.com/threads/shop-statistics.22507/page-14#post-684085
 						//if there's a connection problem, try re-creating the connection
 						logger.log(Level.WARNING, "A connection error occurred while downloading transactions.  Re-creating the connection.", e);
-						connection = connectionFactory.recreateConnection(connection);
-						transactionPage = pageProducer.getPage(pageNumber, connection);
+						connection = pageSource.recreateConnection(connection);
+						transactionPage = pageSource.getPage(pageNumber, connection);
 					} catch (SocketTimeoutException e) {
 						logger.log(Level.WARNING, "A connection error occurred while downloading transactions.  Re-creating the connection.", e);
-						connection = connectionFactory.recreateConnection(connection);
-						transactionPage = pageProducer.getPage(pageNumber, connection);
+						connection = pageSource.recreateConnection(connection);
+						transactionPage = pageSource.getPage(pageNumber, connection);
 					}
 
 					//the session *shouldn't* expire while a download is in progress, but run a check in case the sky falls
 					if (transactionPage == null) {
 						logger.warning("A transaction page couldn't be downloaded due to an invalid session token.  Re-creating the connection.");
-						connection = connectionFactory.createConnection();
-						transactionPage = pageProducer.getPage(pageNumber, connection);
+						connection = pageSource.createSession();
+						transactionPage = pageSource.getPage(pageNumber, connection);
 						if (transactionPage == null) {
 							throw new InvalidSessionException();
 						}
@@ -314,24 +312,20 @@ public class RupeeTransactionReader implements Closeable {
 	 * @author Michael Angstadt
 	 */
 	public static class Builder {
-		private PageProducer pageProducer;
-		private EmcWebsiteConnectionFactory connectionFactory;
+		private PageSource pageSource;
 		private RupeeTransactionPageScraper pageScraper;
 		private Integer startPage = 1;
 		private Date startDate;
 		private int threads = 4;
 
 		/**
-		 * This constructor is meant for unit testing. The {@link PageProducer}
+		 * This constructor is meant for unit testing. The {@link PageSource}
 		 * object allows the unit test to directly inject
 		 * {@link RupeeTransactionPage} instances into the reader.
-		 * @param connectionFactory the website connection factory (should be a
-		 * mock)
-		 * @param pageProducer produces {@link RupeeTransactionPage} instances
+		 * @param pageSource produces {@link RupeeTransactionPage} instances
 		 */
-		Builder(EmcWebsiteConnectionFactory connectionFactory, PageProducer pageProducer) {
-			this.connectionFactory = connectionFactory;
-			this.pageProducer = pageProducer;
+		Builder(PageSource pageSource) {
+			this.pageSource = pageSource;
 		}
 
 		/**
@@ -339,34 +333,31 @@ public class RupeeTransactionReader implements Closeable {
 		 * @param password the player's password
 		 */
 		public Builder(String username, String password) {
-			connectionFactory = defaultConnectionFactory(username, password);
-			pageProducer = defaultPageProducer();
-		}
-
-		private EmcWebsiteConnectionFactory defaultConnectionFactory(String username, String password) {
-			return new EmcWebsiteConnectionFactory() {
-				@Override
-				public EmcWebsiteConnection createConnection() throws IOException {
-					return new EmcWebsiteConnectionImpl(username, password);
-				}
-
-				@Override
-				public EmcWebsiteConnection recreateConnection(EmcWebsiteConnection original) throws IOException {
-					return new EmcWebsiteConnectionImpl(original.getCookieStore());
-				}
-			};
-		}
-
-		private PageProducer defaultPageProducer() {
-			return new PageProducer() {
+			pageSource = new PageSource() {
 				@Override
 				public RupeeTransactionPage getPage(int pageNumber, EmcWebsiteConnection connection) throws IOException {
 					Document document = connection.getRupeeTransactionPage(pageNumber);
 					return pageScraper.scrape(document);
 				}
+
+				@Override
+				public EmcWebsiteConnection recreateConnection(EmcWebsiteConnection connection) throws IOException {
+					return new EmcWebsiteConnectionImpl(connection.getCookieStore());
+				}
+
+				@Override
+				public EmcWebsiteConnection createSession() throws IOException {
+					return new EmcWebsiteConnectionImpl(username, password);
+				}
 			};
 		}
 
+		/**
+		 * Sets the object used to scrape the rupee transaction pages. Only call
+		 * this if you are using custom scribe classes.
+		 * @param pageScraper the page scraper
+		 * @return this
+		 */
 		public Builder pageScraper(RupeeTransactionPageScraper pageScraper) {
 			this.pageScraper = pageScraper;
 			return this;
@@ -395,13 +386,12 @@ public class RupeeTransactionReader implements Closeable {
 		}
 
 		/**
-		 * Sets the number of background, page-download threads to use. These
-		 * threads are responsible for downloading the rupee history pages from
-		 * the website. Having multiple threads significantly improves the speed
-		 * of the reader, due to the inherent network latency involved with
-		 * using the Internet.
+		 * Sets the number of background threads to use for downloading rupee
+		 * transaction pages from the website. Having multiple threads
+		 * significantly improves the speed of the reader, due to the inherent
+		 * network latency involved when downloading data from the Internet.
 		 * @param threads the number of threads (defaults to 4)
-		 * @return
+		 * @return this
 		 */
 		public Builder threads(int threads) {
 			this.threads = threads;
@@ -409,7 +399,7 @@ public class RupeeTransactionReader implements Closeable {
 		}
 
 		/**
-		 * Constructs the file {@link RupeeTransactionReader} object.
+		 * Constructs the {@link RupeeTransactionReader} object.
 		 * @return the object
 		 * @throws IOException
 		 */
@@ -431,29 +421,11 @@ public class RupeeTransactionReader implements Closeable {
 	 * testing.
 	 * @author Michael Angstadt
 	 */
-	interface PageProducer {
+	interface PageSource {
 		RupeeTransactionPage getPage(int pageNumber, EmcWebsiteConnection connection) throws IOException;
-	}
 
-	/**
-	 * Creates {@link EmcWebsiteConnection} objects.
-	 * @author Michael Angstadt
-	 */
-	public interface EmcWebsiteConnectionFactory {
-		/**
-		 * Creates a new connection, re-authenticating the user.
-		 * @return the connection
-		 * @throws IOException
-		 */
-		EmcWebsiteConnection createConnection() throws IOException;
+		EmcWebsiteConnection recreateConnection(EmcWebsiteConnection connection) throws IOException;
 
-		/**
-		 * Reinitializes a connection's HTTP connection, but not the session
-		 * tokens.
-		 * @param original the original connection object
-		 * @return the new connection object
-		 * @throws IOException
-		 */
-		EmcWebsiteConnection recreateConnection(EmcWebsiteConnection original) throws IOException;
+		EmcWebsiteConnection createSession() throws IOException;
 	}
 }

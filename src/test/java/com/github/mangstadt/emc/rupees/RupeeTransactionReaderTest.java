@@ -5,11 +5,10 @@ import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.Matchers.any;
-import static org.mockito.Mockito.RETURNS_MOCKS;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.withSettings;
 
 import java.io.IOException;
 import java.net.ConnectException;
@@ -27,8 +26,7 @@ import org.junit.Test;
 
 import com.github.mangstadt.emc.net.EmcWebsiteConnection;
 import com.github.mangstadt.emc.net.InvalidSessionException;
-import com.github.mangstadt.emc.rupees.RupeeTransactionReader.EmcWebsiteConnectionFactory;
-import com.github.mangstadt.emc.rupees.RupeeTransactionReader.PageProducer;
+import com.github.mangstadt.emc.rupees.RupeeTransactionReader.PageSource;
 import com.github.mangstadt.emc.rupees.dto.RupeeTransaction;
 import com.github.mangstadt.emc.rupees.dto.RupeeTransactionPage;
 
@@ -54,11 +52,9 @@ public class RupeeTransactionReaderTest {
 		);
 		//@formatter:on
 
-		PageProducerMock pageProducer = new PageProducerMock(pages);
+		PageProducerMock pageProducer = spy(new PageProducerMock(pages));
 		pageProducer.sleepOnPage(2, 1000);
 		pageProducer.sleepOnPage(3, 500);
-
-		EmcWebsiteConnectionFactory factory = mock(EmcWebsiteConnectionFactory.class, withSettings().defaultAnswer(RETURNS_MOCKS));
 
 		List<RupeeTransaction> expectedTransactions = new ArrayList<>();
 		for (RupeeTransactionPage page : pages) {
@@ -67,16 +63,16 @@ public class RupeeTransactionReaderTest {
 
 		//@formatter:off
 		RupeeTransactionReader reader = new RupeeTransactionReader
-			.Builder(factory, pageProducer)
+			.Builder(pageProducer)
 			.threads(2)
 			.build();
 		//@formatter:on
 
 		assertTransactionOrder(expectedTransactions, reader);
-		verify(factory).createConnection();
+		verify(pageProducer).createSession();
 
 		//one time for each thread - 1
-		verify(factory, times(1)).recreateConnection(any(EmcWebsiteConnection.class));
+		verify(pageProducer, times(1)).recreateConnection(any(EmcWebsiteConnection.class));
 	}
 
 	@Test
@@ -94,9 +90,7 @@ public class RupeeTransactionReaderTest {
 		transactionsPage2.addAll(gen.next(3));
 		pages.add(new RupeeTransactionPage(1, pageCount++, 2, transactionsPage2));
 
-		PageProducerMock pageProducer = new PageProducerMock(pages);
-
-		EmcWebsiteConnectionFactory factory = mock(EmcWebsiteConnectionFactory.class, withSettings().defaultAnswer(RETURNS_MOCKS));
+		PageProducerMock pageProducer = spy(new PageProducerMock(pages));
 
 		List<RupeeTransaction> expectedTransactions = new ArrayList<>();
 		expectedTransactions.addAll(transactionsPage1);
@@ -104,16 +98,16 @@ public class RupeeTransactionReaderTest {
 
 		//@formatter:off
 		RupeeTransactionReader reader = new RupeeTransactionReader
-			.Builder(factory, pageProducer)
+			.Builder(pageProducer)
 			.threads(2)
 			.build();
 		//@formatter:on
 
 		assertTransactionOrder(expectedTransactions, reader);
-		verify(factory).createConnection();
+		verify(pageProducer).createSession();
 
 		//one time for each thread - 1
-		verify(factory, times(1)).recreateConnection(any(EmcWebsiteConnection.class));
+		verify(pageProducer, times(1)).recreateConnection(any(EmcWebsiteConnection.class));
 	}
 
 	@Test
@@ -129,9 +123,7 @@ public class RupeeTransactionReaderTest {
 		);
 		//@formatter:on
 
-		PageProducerMock pageProducer = new PageProducerMock(pages);
-
-		EmcWebsiteConnectionFactory factory = mock(EmcWebsiteConnectionFactory.class, withSettings().defaultAnswer(RETURNS_MOCKS));
+		PageProducerMock pageProducer = spy(new PageProducerMock(pages));
 
 		List<RupeeTransaction> expectedTransactions = new ArrayList<>();
 		for (int i = 1; i < pages.size(); i++) {
@@ -140,17 +132,17 @@ public class RupeeTransactionReaderTest {
 
 		//@formatter:off
 		RupeeTransactionReader reader = new RupeeTransactionReader
-			.Builder(factory, pageProducer)
+			.Builder(pageProducer)
 			.threads(2)
 			.start(2)
 			.build();
 		//@formatter:on
 
 		assertTransactionOrder(expectedTransactions, reader);
-		verify(factory).createConnection();
+		verify(pageProducer).createSession();
 
 		//one time for each thread - 1
-		verify(factory, times(1)).recreateConnection(any(EmcWebsiteConnection.class));
+		verify(pageProducer, times(1)).recreateConnection(any(EmcWebsiteConnection.class));
 	}
 
 	@Test
@@ -169,9 +161,7 @@ public class RupeeTransactionReaderTest {
 		);
 		//@formatter:on
 
-		PageProducerMock pageProducer = new PageProducerMock(pages);
-
-		EmcWebsiteConnectionFactory factory = mock(EmcWebsiteConnectionFactory.class, withSettings().defaultAnswer(RETURNS_MOCKS));
+		PageProducerMock pageProducer = spy(new PageProducerMock(pages));
 
 		List<RupeeTransaction> expectedTransactions = new ArrayList<>();
 		expectedTransactions.addAll(pages.get(1).getTransactions().subList(2, 5));
@@ -184,17 +174,17 @@ public class RupeeTransactionReaderTest {
 		cal.setTime(latestTransactionDate);
 		cal.add(Calendar.HOUR_OF_DAY, -7);
 		RupeeTransactionReader reader = new RupeeTransactionReader
-			.Builder(factory, pageProducer)
+			.Builder(pageProducer)
 			.threads(2)
 			.start(cal.getTime())
 			.build();
 		//@formatter:on
 
 		assertTransactionOrder(expectedTransactions, reader);
-		verify(factory).createConnection();
+		verify(pageProducer).createSession();
 
 		//one time for each thread - 1
-		verify(factory, times(1)).recreateConnection(any(EmcWebsiteConnection.class));
+		verify(pageProducer, times(1)).recreateConnection(any(EmcWebsiteConnection.class));
 	}
 
 	@Test
@@ -208,9 +198,7 @@ public class RupeeTransactionReaderTest {
 		gen.next(13);
 		pages.add(new RupeeTransactionPage(1_000, pageCount++, 2, gen.next(5)));
 
-		PageProducerMock pageProducer = new PageProducerMock(pages);
-
-		EmcWebsiteConnectionFactory factory = mock(EmcWebsiteConnectionFactory.class, withSettings().defaultAnswer(RETURNS_MOCKS));
+		PageProducerMock pageProducer = spy(new PageProducerMock(pages));
 
 		List<RupeeTransaction> expectedTransactions = new ArrayList<>();
 		expectedTransactions.addAll(pages.get(1).getTransactions());
@@ -220,17 +208,17 @@ public class RupeeTransactionReaderTest {
 		cal.setTime(latestTransactionDate);
 		cal.add(Calendar.HOUR_OF_DAY, -7);
 		RupeeTransactionReader reader = new RupeeTransactionReader
-			.Builder(factory, pageProducer)
+			.Builder(pageProducer)
 			.threads(2)
 			.start(cal.getTime())
 			.build();
 		//@formatter:on
 
 		assertTransactionOrder(expectedTransactions, reader);
-		verify(factory).createConnection();
+		verify(pageProducer).createSession();
 
 		//one time for each thread - 1
-		verify(factory, times(1)).recreateConnection(any(EmcWebsiteConnection.class));
+		verify(pageProducer, times(1)).recreateConnection(any(EmcWebsiteConnection.class));
 	}
 
 	@Test
@@ -248,10 +236,8 @@ public class RupeeTransactionReaderTest {
 			);
 			//@formatter:on
 
-			PageProducerMock pageProducer = new PageProducerMock(pages);
+			PageProducerMock pageProducer = spy(new PageProducerMock(pages));
 			pageProducer.throwOnPage(2, exception);
-
-			EmcWebsiteConnectionFactory factory = mock(EmcWebsiteConnectionFactory.class, withSettings().defaultAnswer(RETURNS_MOCKS));
 
 			List<RupeeTransaction> expectedTransactions = new ArrayList<>();
 			for (RupeeTransactionPage page : pages) {
@@ -260,16 +246,16 @@ public class RupeeTransactionReaderTest {
 
 			//@formatter:off
 			RupeeTransactionReader reader = new RupeeTransactionReader
-				.Builder(factory, pageProducer)
+				.Builder(pageProducer)
 				.threads(2)
 				.build();
 			//@formatter:on
 
 			assertTransactionOrder(expectedTransactions, reader);
-			verify(factory).createConnection();
+			verify(pageProducer).createSession();
 
 			//one time for each thread - 1, and then once again for when the exception is thrown
-			verify(factory, times(2)).recreateConnection(any(EmcWebsiteConnection.class));
+			verify(pageProducer, times(2)).recreateConnection(any(EmcWebsiteConnection.class));
 		}
 	}
 
@@ -288,7 +274,7 @@ public class RupeeTransactionReaderTest {
 			);
 			//@formatter:on
 
-			PageProducerMock pageProducer = new PageProducerMock(pages);
+			PageProducerMock pageProducer = spy(new PageProducerMock(pages));
 
 			//even though the exception is thrown before page 2 is downloaded, page 2 should still be returned
 			pageProducer.sleepOnPage(2, 200);
@@ -296,15 +282,13 @@ public class RupeeTransactionReaderTest {
 			IOException secondException = exception.newInstance();
 			pageProducer.throwOnPage(3, secondException);
 
-			EmcWebsiteConnectionFactory factory = mock(EmcWebsiteConnectionFactory.class, withSettings().defaultAnswer(RETURNS_MOCKS));
-
 			List<RupeeTransaction> expectedTransactions = new ArrayList<>();
 			expectedTransactions.addAll(pages.get(0).getTransactions());
 			expectedTransactions.addAll(pages.get(1).getTransactions());
 
 			//@formatter:off
 			RupeeTransactionReader reader = new RupeeTransactionReader
-				.Builder(factory, pageProducer)
+				.Builder(pageProducer)
 				.threads(2)
 				.build();
 			//@formatter:on
@@ -316,10 +300,10 @@ public class RupeeTransactionReaderTest {
 				assertSame(secondException, e.getCause());
 			}
 
-			verify(factory).createConnection();
+			verify(pageProducer).createSession();
 
 			//one time for each thread - 1, and then once again for when the exception is thrown
-			verify(factory, times(2)).recreateConnection(any(EmcWebsiteConnection.class));
+			verify(pageProducer, times(2)).recreateConnection(any(EmcWebsiteConnection.class));
 		}
 	}
 
@@ -336,13 +320,11 @@ public class RupeeTransactionReaderTest {
 		);
 		//@formatter:on
 
-		PageProducerMock pageProducer = new PageProducerMock(pages);
+		PageProducerMock pageProducer = spy(new PageProducerMock(pages));
 		//even though the exception is thrown before page 2 is downloaded, page 2 should still be returned
 		pageProducer.sleepOnPage(2, 200);
 		Exception exception = new RuntimeException();
 		pageProducer.throwOnPage(3, exception);
-
-		EmcWebsiteConnectionFactory factory = mock(EmcWebsiteConnectionFactory.class, withSettings().defaultAnswer(RETURNS_MOCKS));
 
 		List<RupeeTransaction> expectedTransactions = new ArrayList<>();
 		expectedTransactions.addAll(pages.get(0).getTransactions());
@@ -350,7 +332,7 @@ public class RupeeTransactionReaderTest {
 
 		//@formatter:off
 		RupeeTransactionReader reader = new RupeeTransactionReader
-			.Builder(factory, pageProducer)
+			.Builder(pageProducer)
 			.threads(2)
 			.build();
 		//@formatter:on
@@ -361,10 +343,10 @@ public class RupeeTransactionReaderTest {
 		} catch (IOException e) {
 			assertSame(exception, e.getCause());
 		}
-		verify(factory).createConnection();
+		verify(pageProducer).createSession();
 
 		//one time for each thread - 1
-		verify(factory, times(1)).recreateConnection(any(EmcWebsiteConnection.class));
+		verify(pageProducer, times(1)).recreateConnection(any(EmcWebsiteConnection.class));
 	}
 
 	@Test
@@ -380,10 +362,8 @@ public class RupeeTransactionReaderTest {
 		);
 		//@formatter:on
 
-		PageProducerMock pageProducer = new PageProducerMock(pages);
+		PageProducerMock pageProducer = spy(new PageProducerMock(pages));
 		pageProducer.expireOnPage(2);
-
-		EmcWebsiteConnectionFactory factory = mock(EmcWebsiteConnectionFactory.class, withSettings().defaultAnswer(RETURNS_MOCKS));
 
 		List<RupeeTransaction> expectedTransactions = new ArrayList<>();
 		for (RupeeTransactionPage page : pages) {
@@ -392,7 +372,7 @@ public class RupeeTransactionReaderTest {
 
 		//@formatter:off
 		RupeeTransactionReader reader = new RupeeTransactionReader
-			.Builder(factory, pageProducer)
+			.Builder(pageProducer)
 			.threads(2)
 			.build();
 		//@formatter:on
@@ -400,10 +380,10 @@ public class RupeeTransactionReaderTest {
 		assertTransactionOrder(expectedTransactions, reader);
 
 		//a new connection is created when it sees that the session expired (a null RupeeTransactionPage is returned by the PageProducer)
-		verify(factory, times(2)).createConnection();
+		verify(pageProducer, times(2)).createSession();
 
 		//one time for each thread - 1
-		verify(factory, times(1)).recreateConnection(any(EmcWebsiteConnection.class));
+		verify(pageProducer, times(1)).recreateConnection(any(EmcWebsiteConnection.class));
 	}
 
 	@Test
@@ -419,18 +399,16 @@ public class RupeeTransactionReaderTest {
 		);
 		//@formatter:on
 
-		PageProducerMock pageProducer = new PageProducerMock(pages);
+		PageProducerMock pageProducer = spy(new PageProducerMock(pages));
 		pageProducer.expireOnPage(2);
 		pageProducer.expireOnPage(2);
-
-		EmcWebsiteConnectionFactory factory = mock(EmcWebsiteConnectionFactory.class, withSettings().defaultAnswer(RETURNS_MOCKS));
 
 		List<RupeeTransaction> expectedTransactions = new ArrayList<>();
 		expectedTransactions.addAll(pages.get(0).getTransactions());
 
 		//@formatter:off
 		RupeeTransactionReader reader = new RupeeTransactionReader
-			.Builder(factory, pageProducer)
+			.Builder(pageProducer)
 			.threads(2)
 			.build();
 		//@formatter:on
@@ -443,10 +421,10 @@ public class RupeeTransactionReaderTest {
 		}
 
 		//a new connection is created when it sees that the session expired (a null RupeeTransactionPage is returned by the PageProducer)
-		verify(factory, times(2)).createConnection();
+		verify(pageProducer, times(2)).createSession();
 
 		//one time for each thread - 1
-		verify(factory, times(1)).recreateConnection(any(EmcWebsiteConnection.class));
+		verify(pageProducer, times(1)).recreateConnection(any(EmcWebsiteConnection.class));
 	}
 
 	private static void assertTransactionOrder(List<RupeeTransaction> expectedTransactions, RupeeTransactionReader reader) throws IOException {
@@ -463,7 +441,7 @@ public class RupeeTransactionReaderTest {
 		}
 	}
 
-	private static class PageProducerMock implements PageProducer {
+	private static class PageProducerMock implements PageSource {
 		private final List<RupeeTransactionPage> pages;
 		private final List<List<Exception>> exceptions;
 		private final List<Integer> sleep;
@@ -534,6 +512,16 @@ public class RupeeTransactionReaderTest {
 		public void expireOnPage(int pageNumber) {
 			this.expires.get(pageNumber - 1).add(true);
 		}
+
+		@Override
+		public EmcWebsiteConnection recreateConnection(EmcWebsiteConnection connection) throws IOException {
+			return mock(EmcWebsiteConnection.class);
+		}
+
+		@Override
+		public EmcWebsiteConnection createSession() throws IOException {
+			return mock(EmcWebsiteConnection.class);
+		}
 	}
 
 	private static class TransactionGenerator implements Iterator<RupeeTransaction> {
@@ -573,6 +561,11 @@ public class RupeeTransactionReaderTest {
 				list.add(next());
 			}
 			return list;
+		}
+
+		@Override
+		public void remove() {
+			//empty
 		}
 	}
 }
