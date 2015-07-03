@@ -14,6 +14,7 @@ import java.util.logging.LogManager;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.apache.commons.io.IOUtils;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.junit.BeforeClass;
@@ -42,8 +43,8 @@ public class RupeeTransactionPageScraperTest {
 		RupeeTransactionPage page = scraper.scrape(document);
 
 		assertEquals(Integer.valueOf(1), page.getPage());
-		assertEquals(Integer.valueOf(23_570), page.getTotalPages());
-		assertEquals(Integer.valueOf(1_284_678), page.getRupeeBalance());
+		assertEquals(Integer.valueOf(23570), page.getTotalPages());
+		assertEquals(Integer.valueOf(1284678), page.getRupeeBalance());
 
 		Iterator<RupeeTransaction> it = page.getTransactions().iterator();
 
@@ -51,13 +52,13 @@ public class RupeeTransactionPageScraperTest {
 		assertEquals(new Date(1435429290000L), transaction.getTs());
 		assertEquals("Donation to Notch", transaction.getDescription());
 		assertEquals(32, transaction.getAmount());
-		assertEquals(1_284_678, transaction.getBalance());
+		assertEquals(1284678, transaction.getBalance());
 
 		ShopTransaction shopTransaction = (ShopTransaction) it.next();
 		assertEquals(new Date(1435428172000L), shopTransaction.getTs());
 		assertEquals("Player shop sold 4 Purple Dye to AnguishedCarpet", shopTransaction.getDescription());
 		assertEquals(28, shopTransaction.getAmount());
-		assertEquals(1_284_614, shopTransaction.getBalance());
+		assertEquals(1284614, shopTransaction.getBalance());
 		assertEquals("AnguishedCarpet", shopTransaction.getShopCustomer());
 		assertNull(shopTransaction.getShopOwner());
 		assertEquals(-4, shopTransaction.getQuantity());
@@ -67,7 +68,7 @@ public class RupeeTransactionPageScraperTest {
 		assertEquals(new Date(1435428159000L), paymentTransaction.getTs());
 		assertEquals("Payment to AnguishedCarpet", paymentTransaction.getDescription());
 		assertEquals(-32, paymentTransaction.getAmount());
-		assertEquals(1_284_586, paymentTransaction.getBalance());
+		assertEquals(1284586, paymentTransaction.getBalance());
 		assertEquals("AnguishedCarpet", paymentTransaction.getPlayer());
 		assertNull(paymentTransaction.getReason());
 
@@ -75,13 +76,13 @@ public class RupeeTransactionPageScraperTest {
 		assertEquals(new Date(1435427901000L), dailySigninBonus.getTs());
 		assertEquals("Daily sign-in bonus", dailySigninBonus.getDescription());
 		assertEquals(400, dailySigninBonus.getAmount());
-		assertEquals(1_284_554, dailySigninBonus.getBalance());
+		assertEquals(1284554, dailySigninBonus.getBalance());
 
 		transaction = it.next();
 		assertEquals(new SimpleDateFormat("MM/dd/yyyy HH:mm").parse("11/22/2012 21:54"), transaction.getTs());
 		assertEquals("Week-old transaction", transaction.getDescription());
 		assertEquals(-100, transaction.getAmount());
-		assertEquals(212_990, transaction.getBalance());
+		assertEquals(212990, transaction.getBalance());
 
 		assertFalse(it.hasNext());
 	}
@@ -89,12 +90,12 @@ public class RupeeTransactionPageScraperTest {
 	@Test
 	public void custom_scribe() throws Exception {
 		Document document = load("transaction-page-sample.html");
-		RupeeTransactionPageScraper scraper = new RupeeTransactionPageScraper(Arrays.asList(new DonationTransactionScribe()));
+		RupeeTransactionPageScraper scraper = new RupeeTransactionPageScraper(Arrays.<RupeeTransactionScribe<?>> asList(new DonationTransactionScribe()));
 		RupeeTransactionPage page = scraper.scrape(document);
 
 		assertEquals(Integer.valueOf(1), page.getPage());
-		assertEquals(Integer.valueOf(23_570), page.getTotalPages());
-		assertEquals(Integer.valueOf(1_284_678), page.getRupeeBalance());
+		assertEquals(Integer.valueOf(23570), page.getTotalPages());
+		assertEquals(Integer.valueOf(1284678), page.getRupeeBalance());
 
 		Iterator<RupeeTransaction> it = page.getTransactions().iterator();
 
@@ -102,14 +103,14 @@ public class RupeeTransactionPageScraperTest {
 		assertEquals(new Date(1435429290000L), donation.getTs());
 		assertEquals("Donation to Notch", donation.getDescription());
 		assertEquals(32, donation.getAmount());
-		assertEquals(1_284_678, donation.getBalance());
+		assertEquals(1284678, donation.getBalance());
 		assertEquals("Notch", donation.player);
 
 		ShopTransaction shopTransaction = (ShopTransaction) it.next();
 		assertEquals(new Date(1435428172000L), shopTransaction.getTs());
 		assertEquals("Player shop sold 4 Purple Dye to AnguishedCarpet", shopTransaction.getDescription());
 		assertEquals(28, shopTransaction.getAmount());
-		assertEquals(1_284_614, shopTransaction.getBalance());
+		assertEquals(1284614, shopTransaction.getBalance());
 		assertEquals("AnguishedCarpet", shopTransaction.getShopCustomer());
 		assertNull(shopTransaction.getShopOwner());
 		assertEquals(-4, shopTransaction.getQuantity());
@@ -119,7 +120,7 @@ public class RupeeTransactionPageScraperTest {
 		assertEquals(new Date(1435428159000L), paymentTransaction.getTs());
 		assertEquals("Payment to AnguishedCarpet", paymentTransaction.getDescription());
 		assertEquals(-32, paymentTransaction.getAmount());
-		assertEquals(1_284_586, paymentTransaction.getBalance());
+		assertEquals(1284586, paymentTransaction.getBalance());
 		assertEquals("AnguishedCarpet", paymentTransaction.getPlayer());
 		assertNull(paymentTransaction.getReason());
 
@@ -127,13 +128,13 @@ public class RupeeTransactionPageScraperTest {
 		assertEquals(new Date(1435427901000L), dailySigninBonus.getTs());
 		assertEquals("Daily sign-in bonus", dailySigninBonus.getDescription());
 		assertEquals(400, dailySigninBonus.getAmount());
-		assertEquals(1_284_554, dailySigninBonus.getBalance());
+		assertEquals(1284554, dailySigninBonus.getBalance());
 
 		RupeeTransaction transaction = it.next();
 		assertEquals(new SimpleDateFormat("MM/dd/yyyy HH:mm").parse("11/22/2012 21:54"), transaction.getTs());
 		assertEquals("Week-old transaction", transaction.getDescription());
 		assertEquals(-100, transaction.getAmount());
-		assertEquals(212_990, transaction.getBalance());
+		assertEquals(212990, transaction.getBalance());
 
 		assertFalse(it.hasNext());
 	}
@@ -141,12 +142,12 @@ public class RupeeTransactionPageScraperTest {
 	@Test
 	public void scribe_throws_exception() throws Exception {
 		Document document = load("transaction-page-sample.html");
-		RupeeTransactionPageScraper scraper = new RupeeTransactionPageScraper(Arrays.asList(new ExceptionScribe()));
+		RupeeTransactionPageScraper scraper = new RupeeTransactionPageScraper(Arrays.<RupeeTransactionScribe<?>> asList(new ExceptionScribe()));
 		RupeeTransactionPage page = scraper.scrape(document);
 
 		assertEquals(Integer.valueOf(1), page.getPage());
-		assertEquals(Integer.valueOf(23_570), page.getTotalPages());
-		assertEquals(Integer.valueOf(1_284_678), page.getRupeeBalance());
+		assertEquals(Integer.valueOf(23570), page.getTotalPages());
+		assertEquals(Integer.valueOf(1284678), page.getRupeeBalance());
 
 		Iterator<RupeeTransaction> it = page.getTransactions().iterator();
 
@@ -154,13 +155,13 @@ public class RupeeTransactionPageScraperTest {
 		assertEquals(new Date(1435429290000L), transaction.getTs());
 		assertEquals("Donation to Notch", transaction.getDescription());
 		assertEquals(32, transaction.getAmount());
-		assertEquals(1_284_678, transaction.getBalance());
+		assertEquals(1284678, transaction.getBalance());
 
 		ShopTransaction shopTransaction = (ShopTransaction) it.next();
 		assertEquals(new Date(1435428172000L), shopTransaction.getTs());
 		assertEquals("Player shop sold 4 Purple Dye to AnguishedCarpet", shopTransaction.getDescription());
 		assertEquals(28, shopTransaction.getAmount());
-		assertEquals(1_284_614, shopTransaction.getBalance());
+		assertEquals(1284614, shopTransaction.getBalance());
 		assertEquals("AnguishedCarpet", shopTransaction.getShopCustomer());
 		assertNull(shopTransaction.getShopOwner());
 		assertEquals(-4, shopTransaction.getQuantity());
@@ -170,7 +171,7 @@ public class RupeeTransactionPageScraperTest {
 		assertEquals(new Date(1435428159000L), paymentTransaction.getTs());
 		assertEquals("Payment to AnguishedCarpet", paymentTransaction.getDescription());
 		assertEquals(-32, paymentTransaction.getAmount());
-		assertEquals(1_284_586, paymentTransaction.getBalance());
+		assertEquals(1284586, paymentTransaction.getBalance());
 		assertEquals("AnguishedCarpet", paymentTransaction.getPlayer());
 		assertNull(paymentTransaction.getReason());
 
@@ -178,13 +179,13 @@ public class RupeeTransactionPageScraperTest {
 		assertEquals(new Date(1435427901000L), dailySigninBonus.getTs());
 		assertEquals("Daily sign-in bonus", dailySigninBonus.getDescription());
 		assertEquals(400, dailySigninBonus.getAmount());
-		assertEquals(1_284_554, dailySigninBonus.getBalance());
+		assertEquals(1284554, dailySigninBonus.getBalance());
 
 		transaction = it.next();
 		assertEquals(new SimpleDateFormat("MM/dd/yyyy HH:mm").parse("11/22/2012 21:54"), transaction.getTs());
 		assertEquals("Week-old transaction", transaction.getDescription());
 		assertEquals(-100, transaction.getAmount());
-		assertEquals(212_990, transaction.getBalance());
+		assertEquals(212990, transaction.getBalance());
 
 		assertFalse(it.hasNext());
 	}
@@ -204,7 +205,7 @@ public class RupeeTransactionPageScraperTest {
 		RupeeTransactionPage page = scraper.scrape(document);
 
 		assertEquals(Integer.valueOf(3), page.getPage());
-		assertEquals(Integer.valueOf(2_654), page.getTotalPages());
+		assertEquals(Integer.valueOf(2654), page.getTotalPages());
 		assertNull(page.getRupeeBalance());
 	}
 
@@ -215,13 +216,16 @@ public class RupeeTransactionPageScraperTest {
 		RupeeTransactionPage page = scraper.scrape(document);
 
 		assertEquals(Integer.valueOf(3), page.getPage());
-		assertEquals(Integer.valueOf(2_654), page.getTotalPages());
+		assertEquals(Integer.valueOf(2654), page.getTotalPages());
 		assertNull(page.getRupeeBalance());
 	}
 
 	private Document load(String file) throws IOException {
-		try (InputStream in = getClass().getResourceAsStream(file)) {
+		InputStream in = getClass().getResourceAsStream(file);
+		try {
 			return Jsoup.parse(in, "UTF-8", "");
+		} finally {
+			IOUtils.closeQuietly(in);
 		}
 	}
 

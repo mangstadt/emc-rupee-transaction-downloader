@@ -39,10 +39,10 @@ public class RupeeTransactionReader implements Closeable {
 
 	private Iterator<RupeeTransaction> transactionsOnCurrentPage;
 	private RupeeTransactionPage currentPage;
-	private final BlockingQueue<RupeeTransactionPage> queue = new LinkedBlockingQueue<>();
-	private final RupeeTransactionPage noMoreElements = new RupeeTransactionPage(null, null, null, Collections.emptyList());
-	private final Map<Integer, RupeeTransactionPage> buffer = new HashMap<>();
-	private final Set<Integer> hashesOfReturnedTransactions = new HashSet<>();
+	private final BlockingQueue<RupeeTransactionPage> queue = new LinkedBlockingQueue<RupeeTransactionPage>();
+	private final RupeeTransactionPage noMoreElements = new RupeeTransactionPage(null, null, null, Collections.<RupeeTransaction> emptyList());
+	private final Map<Integer, RupeeTransactionPage> buffer = new HashMap<Integer, RupeeTransactionPage>();
+	private final Set<Integer> hashesOfReturnedTransactions = new HashSet<Integer>();
 
 	private final PageSource pageSource;
 	private final Integer startAtPage;
@@ -61,7 +61,6 @@ public class RupeeTransactionReader implements Closeable {
 	private RupeeTransactionReader(Builder builder) throws IOException {
 		pageSource = builder.pageSource;
 		threads = builder.threads;
-		//TODO downgrade to 1.6
 
 		EmcWebsiteConnection connection = pageSource.createSession();
 		RupeeTransactionPage firstPage = pageSource.getPage(1, connection);
@@ -332,7 +331,7 @@ public class RupeeTransactionReader implements Closeable {
 		 * @param username the player's username
 		 * @param password the player's password
 		 */
-		public Builder(String username, String password) {
+		public Builder(final String username, final String password) {
 			pageSource = new PageSource() {
 				@Override
 				public RupeeTransactionPage getPage(int pageNumber, EmcWebsiteConnection connection) throws IOException {

@@ -8,6 +8,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.apache.commons.io.IOUtils;
 import org.apache.http.Consts;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
@@ -135,8 +136,11 @@ public class EmcWebsiteConnectionImpl implements EmcWebsiteConnection {
 		HttpGet request = new HttpGet(url);
 		HttpResponse response = client.execute(request);
 		HttpEntity entity = response.getEntity();
-		try (InputStream in = entity.getContent()) {
+		InputStream in = entity.getContent();
+		try {
 			return Jsoup.parse(in, "UTF-8", base);
+		} finally {
+			IOUtils.closeQuietly(in);
 		}
 	}
 
@@ -146,8 +150,11 @@ public class EmcWebsiteConnectionImpl implements EmcWebsiteConnection {
 		HttpGet request = new HttpGet(url);
 		HttpResponse response = client.execute(request);
 		HttpEntity entity = response.getEntity();
-		try (InputStream in = entity.getContent()) {
+		InputStream in = entity.getContent();
+		try {
 			return Jsoup.parse(in, "UTF-8", "http://empireminecraft.com");
+		} finally {
+			IOUtils.closeQuietly(in);
 		}
 	}
 
@@ -168,7 +175,7 @@ public class EmcWebsiteConnectionImpl implements EmcWebsiteConnection {
 		//TODO proper JSON parsing
 		Pattern nameRegex = Pattern.compile("\"name\":\"(.*?)\"");
 		Matcher matcher = nameRegex.matcher(json);
-		List<String> players = new ArrayList<>();
+		List<String> players = new ArrayList<String>();
 		while (matcher.find()) {
 			String playerName = matcher.group(1);
 			players.add(playerName);

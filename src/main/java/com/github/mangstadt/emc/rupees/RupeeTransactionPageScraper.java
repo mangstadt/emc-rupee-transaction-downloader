@@ -38,7 +38,7 @@ public class RupeeTransactionPageScraper {
 	private final Pattern balanceRegex = Pattern.compile("^Your balance: ([\\d,]+)$", Pattern.CASE_INSENSITIVE);
 	private final Pattern amountRegex = Pattern.compile("^(-|\\+)\\s*([\\d,]+)$", Pattern.CASE_INSENSITIVE);
 
-	private final List<RupeeTransactionScribe<?>> scribes = new ArrayList<>();
+	private final List<RupeeTransactionScribe<?>> scribes = new ArrayList<RupeeTransactionScribe<?>>();
 	{
 		scribes.add(new ShopTransactionScribe());
 		scribes.add(new PaymentTransactionScribe());
@@ -92,7 +92,7 @@ public class RupeeTransactionPageScraper {
 		}
 
 		//set initial capacity to 30, because each rupee transaction page contains 30 transactions
-		List<RupeeTransaction> transactions = new ArrayList<>(30);
+		List<RupeeTransaction> transactions = new ArrayList<RupeeTransaction>(30);
 
 		for (Element element : containerElement.select("li.sectionItem")) {
 			try {
@@ -183,6 +183,7 @@ public class RupeeTransactionPageScraper {
 			String tsText = tsElement.attr("title");
 
 			//instantiate new DateFormat object to keep this class thread-safe
+			//English month names are used, no matter where the player lives!
 			DateFormat df = new SimpleDateFormat("MMM dd, yyyy 'at' hh:mm aa", Locale.US);
 
 			return df.parse(tsText);
