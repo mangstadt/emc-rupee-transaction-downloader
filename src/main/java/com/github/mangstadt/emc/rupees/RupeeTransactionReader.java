@@ -45,8 +45,8 @@ public class RupeeTransactionReader implements Closeable {
 	private final Set<Integer> hashesOfReturnedTransactions = new HashSet<Integer>();
 
 	private final PageSource pageSource;
-	private final Integer startAtPage;
-	private final Date startAtDate;
+	private final Integer startAtPage, stopAtPage;
+	private final Date startAtDate, stopAtDate;
 	private final int threads;
 
 	private final Date latestTransactionDate;
@@ -61,6 +61,8 @@ public class RupeeTransactionReader implements Closeable {
 	private RupeeTransactionReader(Builder builder) throws IOException {
 		pageSource = builder.pageSource;
 		threads = builder.threads;
+		stopAtPage = builder.stopPage;
+		stopAtDate = builder.stopDate;
 
 		EmcWebsiteConnection connection = pageSource.createSession();
 		RupeeTransactionPage firstPage = pageSource.getPage(1, connection);
@@ -189,6 +191,16 @@ public class RupeeTransactionReader implements Closeable {
 			}
 
 			/*
+			 * If a stop date was specified, and the transaction's date is the
+			 * same as, or comes before, the stop date, then we're reached the
+			 * "end of stream". The download threads will terminate in time.
+			 */
+			if (stopAtDate != null && transaction.getTs().getTime() <= stopAtDate.getTime()) {
+				endOfStream = true;
+				return null;
+			}
+
+			/*
 			 * Check to see if the transaction was already returned. If this
 			 * happens, then it means that new transactions were added while
 			 * this class was downloading transaction pages. When a new
@@ -226,10 +238,14 @@ public class RupeeTransactionReader implements Closeable {
 				while (true) {
 					synchronized (RupeeTransactionReader.this) {
 						if (cancel) {
-							return;
+							break;
 						}
 					}
+
 					pageNumber = pageCounter.getAndIncrement();
+					if (stopAtPage != null && pageNumber > stopAtPage) {
+						break;
+					}
 
 					RupeeTransactionPage transactionPage = null;
 					try {
@@ -262,6 +278,17 @@ public class RupeeTransactionReader implements Closeable {
 						break;
 					}
 
+					if (stopAtDate != null && transactionPage.getFirstTransactionDate().getTime() <= stopAtDate.getTime()) {
+						/*
+						 * If the FIRST transaction in the list comes before the
+						 * stop date, then the entire page should be ignored (it
+						 * should *not* be added to the queue), and the thread
+						 * should terminate (because there are no more
+						 * transaction pages to parse).
+						 */
+						break;
+					}
+
 					synchronized (RupeeTransactionReader.this) {
 						if (nextPageToPutInQueue == pageNumber) {
 							queue.add(transactionPage);
@@ -278,12 +305,30 @@ public class RupeeTransactionReader implements Closeable {
 							buffer.put(pageNumber, transactionPage);
 						}
 					}
+
+					if (stopAtDate != null && transactionPage.getLastTransactionDate().getTime() <= stopAtDate.getTime()) {
+						/*
+						 * At this point, we know the FIRST transaction in the
+						 * list does *not* come before the stop date (see if
+						 * statement above), but the LAST transaction *does*
+						 * come before the stop date (this if statement).
+						 * 
+						 * This means a sub-set of the transactions on this page
+						 * come before the stop date, so we still need to add
+						 * this page to the queue (as was done above).
+						 * 
+						 * However, the thread can terminate because we know
+						 * there are no more transaction pages to parse.
+						 */
+						break;
+					}
 				}
 			} catch (Throwable t) {
 				synchronized (RupeeTransactionReader.this) {
 					if (cancel) {
 						return;
 					}
+
 					thrown = new IOException("A problem occurred downloading page " + pageNumber + ".", t);
 					cancel = true;
 				}
@@ -313,8 +358,8 @@ public class RupeeTransactionReader implements Closeable {
 	public static class Builder {
 		private PageSource pageSource;
 		private RupeeTransactionPageScraper pageScraper;
-		private Integer startPage = 1;
-		private Date startDate;
+		private Integer startPage = 1, stopPage;
+		private Date startDate, stopDate;
 		private int threads = 4;
 
 		/**
@@ -374,13 +419,35 @@ public class RupeeTransactionReader implements Closeable {
 		}
 
 		/**
-		 * Sets the date to start parsing at.
+		 * Sets the transaction date to start parsing at.
 		 * @param date the date
 		 * @return this
 		 */
 		public Builder start(Date date) {
 			startDate = date;
 			startPage = null;
+			return this;
+		}
+
+		/**
+		 * Sets the page to stop parsing at (inclusive).
+		 * @param page the page
+		 * @return this
+		 */
+		public Builder stop(Integer page) {
+			stopPage = page;
+			stopDate = null;
+			return this;
+		}
+
+		/**
+		 * Sets the transaction date to stop parsing at (exclusive).
+		 * @param date the date
+		 * @return this
+		 */
+		public Builder stop(Date date) {
+			stopDate = date;
+			stopPage = null;
 			return this;
 		}
 
