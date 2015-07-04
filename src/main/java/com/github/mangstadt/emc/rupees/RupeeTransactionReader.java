@@ -418,6 +418,10 @@ public class RupeeTransactionReader implements Closeable {
 			return this;
 		}
 
+		public Integer startPage() {
+			return startPage;
+		}
+
 		/**
 		 * Sets the transaction date to start parsing at.
 		 * @param date the date
@@ -427,6 +431,10 @@ public class RupeeTransactionReader implements Closeable {
 			startDate = date;
 			startPage = null;
 			return this;
+		}
+
+		public Date startDate() {
+			return startDate;
 		}
 
 		/**
@@ -440,6 +448,10 @@ public class RupeeTransactionReader implements Closeable {
 			return this;
 		}
 
+		public Integer stopPage() {
+			return stopPage;
+		}
+
 		/**
 		 * Sets the transaction date to stop parsing at (exclusive).
 		 * @param date the date
@@ -449,6 +461,10 @@ public class RupeeTransactionReader implements Closeable {
 			stopDate = date;
 			stopPage = null;
 			return this;
+		}
+
+		public Date stopDate() {
+			return stopDate;
 		}
 
 		/**
