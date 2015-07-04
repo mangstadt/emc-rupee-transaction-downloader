@@ -478,6 +478,10 @@ public class RupeeTransactionReader implements Closeable {
 				pageScraper = new RupeeTransactionPageScraper();
 			}
 
+			if (stopPage != null && stopPage < 1) {
+				stopPage = 1;
+			}
+
 			return new RupeeTransactionReader(this);
 		}
 	}

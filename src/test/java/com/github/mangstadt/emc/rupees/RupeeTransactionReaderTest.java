@@ -16,6 +16,7 @@ import java.net.SocketTimeoutException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
+import java.util.Collections;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
@@ -211,6 +212,195 @@ public class RupeeTransactionReaderTest {
 			.Builder(pageProducer)
 			.threads(2)
 			.start(cal.getTime())
+			.build();
+		//@formatter:on
+
+		assertTransactionOrder(expectedTransactions, reader);
+		verify(pageProducer).createSession();
+
+		//one time for each thread - 1
+		verify(pageProducer, times(1)).recreateConnection(any(EmcWebsiteConnection.class));
+	}
+
+	@Test
+	public void stopPage() throws IOException {
+		//@formatter:off
+		TransactionGenerator gen = new TransactionGenerator();
+		int pageCount = 1;
+		List<RupeeTransactionPage> pages = Arrays.asList(
+			new RupeeTransactionPage(1000, pageCount++, 4, gen.next(3)),
+			new RupeeTransactionPage(1000, pageCount++, 4, gen.next(3)),
+			new RupeeTransactionPage(1000, pageCount++, 4, gen.next(3)),
+			new RupeeTransactionPage(1000, pageCount++, 4, gen.next(3))
+		);
+		//@formatter:on
+
+		PageProducerMock pageProducer = spy(new PageProducerMock(pages));
+
+		List<RupeeTransaction> expectedTransactions = new ArrayList<RupeeTransaction>();
+		for (int i = 0; i < 3; i++) {
+			expectedTransactions.addAll(pages.get(i).getTransactions());
+		}
+
+		//@formatter:off
+		RupeeTransactionReader reader = new RupeeTransactionReader
+			.Builder(pageProducer)
+			.threads(2)
+			.stop(3)
+			.build();
+		//@formatter:on
+
+		assertTransactionOrder(expectedTransactions, reader);
+		verify(pageProducer).createSession();
+
+		//one time for each thread - 1
+		verify(pageProducer, times(1)).recreateConnection(any(EmcWebsiteConnection.class));
+	}
+
+	@Test
+	public void stopPage_greater_than_last_page() throws IOException {
+		//@formatter:off
+		TransactionGenerator gen = new TransactionGenerator();
+		int pageCount = 1;
+		List<RupeeTransactionPage> pages = Arrays.asList(
+			new RupeeTransactionPage(1000, pageCount++, 4, gen.next(3)),
+			new RupeeTransactionPage(1000, pageCount++, 4, gen.next(3)),
+			new RupeeTransactionPage(1000, pageCount++, 4, gen.next(3)),
+			new RupeeTransactionPage(1000, pageCount++, 4, gen.next(3))
+		);
+		//@formatter:on
+
+		PageProducerMock pageProducer = spy(new PageProducerMock(pages));
+
+		List<RupeeTransaction> expectedTransactions = new ArrayList<RupeeTransaction>();
+		for (RupeeTransactionPage page : pages) {
+			expectedTransactions.addAll(page.getTransactions());
+		}
+
+		//@formatter:off
+		RupeeTransactionReader reader = new RupeeTransactionReader
+			.Builder(pageProducer)
+			.threads(2)
+			.stop(10)
+			.build();
+		//@formatter:on
+
+		assertTransactionOrder(expectedTransactions, reader);
+		verify(pageProducer).createSession();
+
+		//one time for each thread - 1
+		verify(pageProducer, times(1)).recreateConnection(any(EmcWebsiteConnection.class));
+	}
+
+	@Test
+	public void stopDate() throws IOException {
+		Date latestTransactionDate = new Date();
+
+		//@formatter:off
+		TransactionGenerator gen = new TransactionGenerator(latestTransactionDate);
+		int pageCount = 1;
+		List<RupeeTransactionPage> pages = Arrays.asList(
+			new RupeeTransactionPage(1000, pageCount++, 5, gen.next(5)),
+			new RupeeTransactionPage(1000, pageCount++, 5, gen.next(5)),
+			new RupeeTransactionPage(1000, pageCount++, 5, gen.next(5)),
+			new RupeeTransactionPage(1000, pageCount++, 5, gen.next(5)),
+			new RupeeTransactionPage(1000, pageCount++, 5, gen.next(5))
+		);
+		//@formatter:on
+
+		PageProducerMock pageProducer = spy(new PageProducerMock(pages));
+
+		Calendar cal = Calendar.getInstance();
+		cal.setTime(latestTransactionDate);
+		cal.add(Calendar.HOUR_OF_DAY, -7);
+		Date stopAt = cal.getTime();
+
+		List<RupeeTransaction> expectedTransactions = new ArrayList<RupeeTransaction>();
+		expectedTransactions.addAll(pages.get(0).getTransactions());
+		expectedTransactions.addAll(pages.get(1).getTransactions().subList(0, 2));
+
+		//@formatter:off
+		RupeeTransactionReader reader = new RupeeTransactionReader
+			.Builder(pageProducer)
+			.threads(2)
+			.stop(stopAt)
+			.build();
+		//@formatter:on
+
+		assertTransactionOrder(expectedTransactions, reader);
+		verify(pageProducer).createSession();
+
+		//one time for each thread - 1
+		verify(pageProducer, times(1)).recreateConnection(any(EmcWebsiteConnection.class));
+	}
+
+	@Test
+	public void stopDate_same_as_first_transaction_date() throws IOException {
+		Date latestTransactionDate = new Date();
+
+		//@formatter:off
+		TransactionGenerator gen = new TransactionGenerator(latestTransactionDate);
+		int pageCount = 1;
+		List<RupeeTransactionPage> pages = Arrays.asList(
+			new RupeeTransactionPage(1000, pageCount++, 5, gen.next(5)),
+			new RupeeTransactionPage(1000, pageCount++, 5, gen.next(5)),
+			new RupeeTransactionPage(1000, pageCount++, 5, gen.next(5)),
+			new RupeeTransactionPage(1000, pageCount++, 5, gen.next(5)),
+			new RupeeTransactionPage(1000, pageCount++, 5, gen.next(5))
+		);
+		//@formatter:on
+
+		PageProducerMock pageProducer = spy(new PageProducerMock(pages));
+
+		Date stopAt = latestTransactionDate;
+
+		List<RupeeTransaction> expectedTransactions = Collections.emptyList();
+
+		//@formatter:off
+		RupeeTransactionReader reader = new RupeeTransactionReader
+			.Builder(pageProducer)
+			.threads(2)
+			.stop(stopAt)
+			.build();
+		//@formatter:on
+
+		assertTransactionOrder(expectedTransactions, reader);
+		verify(pageProducer).createSession();
+
+		//one time for each thread - 1
+		verify(pageProducer, times(1)).recreateConnection(any(EmcWebsiteConnection.class));
+	}
+
+	@Test
+	public void stopDate_after_first_transaction_date() throws IOException {
+		Date latestTransactionDate = new Date();
+
+		//@formatter:off
+		TransactionGenerator gen = new TransactionGenerator(latestTransactionDate);
+		int pageCount = 1;
+		List<RupeeTransactionPage> pages = Arrays.asList(
+			new RupeeTransactionPage(1000, pageCount++, 5, gen.next(5)),
+			new RupeeTransactionPage(1000, pageCount++, 5, gen.next(5)),
+			new RupeeTransactionPage(1000, pageCount++, 5, gen.next(5)),
+			new RupeeTransactionPage(1000, pageCount++, 5, gen.next(5)),
+			new RupeeTransactionPage(1000, pageCount++, 5, gen.next(5))
+		);
+		//@formatter:on
+
+		PageProducerMock pageProducer = spy(new PageProducerMock(pages));
+
+		Calendar cal = Calendar.getInstance();
+		cal.setTime(latestTransactionDate);
+		cal.add(Calendar.HOUR, 1);
+		Date stopAt = cal.getTime();
+
+		List<RupeeTransaction> expectedTransactions = Collections.emptyList();
+
+		//@formatter:off
+		RupeeTransactionReader reader = new RupeeTransactionReader
+			.Builder(pageProducer)
+			.threads(2)
+			.stop(stopAt)
 			.build();
 		//@formatter:on
 
@@ -438,6 +628,7 @@ public class RupeeTransactionReaderTest {
 				assertSame(expected, actual);
 			}
 		} finally {
+			//this is in a finally block because some tests have the reader throw exceptions
 			assertFalse(expectedOrder.hasNext());
 		}
 	}
