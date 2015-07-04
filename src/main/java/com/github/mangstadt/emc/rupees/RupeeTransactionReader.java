@@ -19,6 +19,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import org.apache.http.client.CookieStore;
 import org.jsoup.nodes.Document;
 
 import com.github.mangstadt.emc.net.EmcWebsiteConnection;
@@ -370,6 +371,26 @@ public class RupeeTransactionReader implements Closeable {
 		 */
 		Builder(PageSource pageSource) {
 			this.pageSource = pageSource;
+		}
+
+		public Builder(final CookieStore cookieStore) {
+			pageSource = new PageSource() {
+				@Override
+				public RupeeTransactionPage getPage(int pageNumber, EmcWebsiteConnection connection) throws IOException {
+					Document document = connection.getRupeeTransactionPage(pageNumber);
+					return pageScraper.scrape(document);
+				}
+
+				@Override
+				public EmcWebsiteConnection recreateConnection(EmcWebsiteConnection connection) throws IOException {
+					return new EmcWebsiteConnectionImpl(connection.getCookieStore());
+				}
+
+				@Override
+				public EmcWebsiteConnection createSession() throws IOException {
+					return new EmcWebsiteConnectionImpl(cookieStore);
+				}
+			};
 		}
 
 		/**
