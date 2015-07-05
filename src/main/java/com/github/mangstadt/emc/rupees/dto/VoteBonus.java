@@ -22,7 +22,7 @@ public class VoteBonus extends RupeeTransaction {
 		return day;
 	}
 
-	public static class Builder extends RupeeTransaction.Builder {
+	public static class Builder extends RupeeTransaction.Builder<Builder> {
 		private String site;
 		private int day;
 

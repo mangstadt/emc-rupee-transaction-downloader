@@ -1,5 +1,6 @@
 package com.github.mangstadt.emc.rupees.dto;
 
+
 /**
  * The fee that players are charged when they summon horses from their stable
  * outside of town.
@@ -33,7 +34,7 @@ public class HorseSummonFee extends RupeeTransaction {
 		return z;
 	}
 
-	public static class Builder extends RupeeTransaction.Builder {
+	public static class Builder extends RupeeTransaction.Builder<Builder> {
 		private String world;
 		private double x, y, z;
 

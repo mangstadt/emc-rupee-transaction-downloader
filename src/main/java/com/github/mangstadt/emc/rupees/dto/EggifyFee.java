@@ -1,5 +1,6 @@
 package com.github.mangstadt.emc.rupees.dto;
 
+
 /**
  * The fee that players are charged when they eggify animals outside of town.
  * @author Michael Angstadt
@@ -16,7 +17,7 @@ public class EggifyFee extends RupeeTransaction {
 		return mob;
 	}
 
-	public static class Builder extends RupeeTransaction.Builder {
+	public static class Builder extends RupeeTransaction.Builder<Builder> {
 		private String mob;
 
 		public Builder mob(String mob) {

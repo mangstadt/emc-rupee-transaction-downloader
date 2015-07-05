@@ -22,7 +22,7 @@ public class MailFee extends RupeeTransaction {
 		return subject;
 	}
 
-	public static class Builder extends RupeeTransaction.Builder {
+	public static class Builder extends RupeeTransaction.Builder<Builder> {
 		private String player, subject;
 
 		public Builder player(String player) {

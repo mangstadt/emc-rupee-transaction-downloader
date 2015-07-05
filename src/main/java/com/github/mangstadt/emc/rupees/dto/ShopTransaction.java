@@ -32,7 +32,7 @@ public class ShopTransaction extends RupeeTransaction {
 		return quantity;
 	}
 
-	public static class Builder extends RupeeTransaction.Builder {
+	public static class Builder extends RupeeTransaction.Builder<Builder> {
 		private String shopCustomer, shopOwner, item;
 		private int quantity;
 

@@ -9,7 +9,7 @@ public class DailySigninBonus extends RupeeTransaction {
 		super(builder);
 	}
 
-	public static class Builder extends RupeeTransaction.Builder {
+	public static class Builder extends RupeeTransaction.Builder<Builder> {
 		public DailySigninBonus build() {
 			return new DailySigninBonus(this);
 		}

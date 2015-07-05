@@ -21,7 +21,7 @@ public class PaymentTransaction extends RupeeTransaction {
 		return reason;
 	}
 
-	public static class Builder extends RupeeTransaction.Builder {
+	public static class Builder extends RupeeTransaction.Builder<Builder> {
 		private String player, reason;
 
 		public String player() {

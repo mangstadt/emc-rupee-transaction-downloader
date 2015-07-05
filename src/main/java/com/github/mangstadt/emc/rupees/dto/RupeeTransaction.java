@@ -11,7 +11,7 @@ public class RupeeTransaction {
 	private final String description;
 	private final int amount, balance;
 
-	protected RupeeTransaction(Builder builder) {
+	protected RupeeTransaction(Builder<?> builder) {
 		ts = builder.ts;
 		description = builder.description;
 		amount = builder.amount;
@@ -64,27 +64,18 @@ public class RupeeTransaction {
 
 	@Override
 	public boolean equals(Object obj) {
-		if (this == obj)
-			return true;
-		if (obj == null)
-			return false;
-		if (getClass() != obj.getClass())
-			return false;
+		if (this == obj) return true;
+		if (obj == null) return false;
+		if (getClass() != obj.getClass()) return false;
 		RupeeTransaction other = (RupeeTransaction) obj;
-		if (amount != other.amount)
-			return false;
-		if (balance != other.balance)
-			return false;
+		if (amount != other.amount) return false;
+		if (balance != other.balance) return false;
 		if (description == null) {
-			if (other.description != null)
-				return false;
-		} else if (!description.equals(other.description))
-			return false;
+			if (other.description != null) return false;
+		} else if (!description.equals(other.description)) return false;
 		if (ts == null) {
-			if (other.ts != null)
-				return false;
-		} else if (!ts.equals(other.ts))
-			return false;
+			if (other.ts != null) return false;
+		} else if (!ts.equals(other.ts)) return false;
 		return true;
 	}
 
@@ -97,10 +88,13 @@ public class RupeeTransaction {
 	 * Creates new instances of the {@link RupeeTransaction} class.
 	 * @author Michael Angstadt
 	 */
-	public static class Builder {
+	public static class Builder<T extends Builder<?>> {
 		private Date ts;
 		private String description;
 		private int amount, balance;
+
+		@SuppressWarnings("unchecked")
+		private T this_ = (T) this;
 
 		public Builder() {
 			//empty
@@ -113,24 +107,24 @@ public class RupeeTransaction {
 			balance = orig.balance;
 		}
 
-		public Builder ts(Date ts) {
+		public T ts(Date ts) {
 			this.ts = ts;
-			return this;
+			return this_;
 		}
 
-		public Builder description(String description) {
+		public T description(String description) {
 			this.description = description;
-			return this;
+			return this_;
 		}
 
-		public Builder amount(int amount) {
+		public T amount(int amount) {
 			this.amount = amount;
-			return this;
+			return this_;
 		}
 
-		public Builder balance(int balance) {
+		public T balance(int balance) {
 			this.balance = balance;
-			return this;
+			return this_;
 		}
 
 		public RupeeTransaction build() {

@@ -10,7 +10,7 @@ public class VaultFee extends RupeeTransaction {
 		super(builder);
 	}
 
-	public static class Builder extends RupeeTransaction.Builder {
+	public static class Builder extends RupeeTransaction.Builder<Builder> {
 		public VaultFee build() {
 			return new VaultFee(this);
 		}

@@ -34,7 +34,7 @@ public class LockTransaction extends RupeeTransaction {
 		return z;
 	}
 
-	public static class Builder extends RupeeTransaction.Builder {
+	public static class Builder extends RupeeTransaction.Builder<Builder> {
 		private String world;
 		private int x, y, z;
 
