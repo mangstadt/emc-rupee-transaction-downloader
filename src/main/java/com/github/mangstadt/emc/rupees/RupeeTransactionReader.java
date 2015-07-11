@@ -58,6 +58,7 @@ public class RupeeTransactionReader implements Closeable {
 
 	private int deadThreads = 0;
 	private boolean cancel = false, endOfStream = false;
+	private Integer rupeeBalance;
 
 	private RupeeTransactionReader(Builder builder) throws IOException {
 		pageSource = builder.pageSource;
@@ -174,6 +175,7 @@ public class RupeeTransactionReader implements Closeable {
 				}
 
 				transactionsOnCurrentPage = currentPage.getTransactions().iterator();
+				rupeeBalance = currentPage.getRupeeBalance();
 			}
 
 			transaction = transactionsOnCurrentPage.next();
@@ -215,6 +217,17 @@ public class RupeeTransactionReader implements Closeable {
 
 			return transaction;
 		}
+	}
+
+	/**
+	 * Gets the player's total rupee balance. This value is updated every time a
+	 * new transaction page is read. It should not change unless more
+	 * transactions are added while the reader is downloading pages.
+	 * @return the rupee balance or null if no transaction pages have been read
+	 * yet
+	 */
+	public Integer getRupeeBalance() {
+		return rupeeBalance;
 	}
 
 	/**
