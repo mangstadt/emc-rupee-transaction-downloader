@@ -97,7 +97,7 @@ public class RupeeTransactionPageScraper {
 		for (Element element : containerElement.select("li.sectionItem")) {
 			try {
 				String description = parseDescription(element);
-				RupeeTransaction.Builder builder = null;
+				RupeeTransaction.Builder<?> builder = null;
 				for (RupeeTransactionScribe<?> scribe : scribes) {
 					try {
 						builder = scribe.parse(description);
@@ -109,7 +109,7 @@ public class RupeeTransactionPageScraper {
 					}
 				}
 				if (builder == null) {
-					builder = new RupeeTransaction.Builder();
+					builder = new RupeeTransaction.Builder<RupeeTransaction.Builder<?>>();
 				}
 
 				builder.ts(parseTs(element));
