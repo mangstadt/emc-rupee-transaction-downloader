@@ -10,7 +10,7 @@ import com.github.mangstadt.emc.rupees.dto.RupeeTransaction;
  * @author Michael Angstadt
  * @param <T> the builder class of the rupee transaction class
  */
-public abstract class RegexScribe<T extends RupeeTransaction.Builder> extends RupeeTransactionScribe<T> {
+public abstract class RegexScribe<T extends RupeeTransaction.Builder<?>> extends RupeeTransactionScribe<T> {
 	private final Pattern regex;
 
 	public RegexScribe(String regex) {

@@ -258,7 +258,7 @@ public class RupeeTransactionPageScraperTest {
 			this.player = builder.player;
 		}
 
-		public static class Builder extends RupeeTransaction.Builder {
+		public static class Builder extends RupeeTransaction.Builder<Builder> {
 			private String player;
 
 			public Builder player(String player) {

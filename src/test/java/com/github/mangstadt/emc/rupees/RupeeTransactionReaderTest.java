@@ -738,7 +738,7 @@ public class RupeeTransactionReaderTest {
 			calendar.add(Calendar.HOUR_OF_DAY, -1);
 
 			//@formatter:off
-			return new RupeeTransaction.Builder()
+			return new RupeeTransaction.Builder<RupeeTransaction.Builder<?>>()
 			.ts(ts)
 			.amount(1)
 			.balance(1)

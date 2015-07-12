@@ -2,14 +2,13 @@ package com.github.mangstadt.emc.rupees.scribe;
 
 import com.github.mangstadt.emc.rupees.dto.RupeeTransaction;
 
-
 /**
  * Parses a rupee transaction into a specific class, based on the transaction's
  * description.
  * @author Michael Angstadt
  * @param <T> the builder class of the rupee transaction class
  */
-public abstract class RupeeTransactionScribe<T extends RupeeTransaction.Builder> {
+public abstract class RupeeTransactionScribe<T extends RupeeTransaction.Builder<?>> {
 	/**
 	 * Parses a transaction's description, returning a builder object for that
 	 * transaction type.

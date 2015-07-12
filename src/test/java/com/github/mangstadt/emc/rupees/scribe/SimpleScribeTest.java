@@ -11,10 +11,10 @@ import com.github.mangstadt.emc.rupees.dto.RupeeTransaction.Builder;
  * @author Michael Angstadt
  */
 public class SimpleScribeTest {
-	private final SimpleScribe<Builder> scribe = new SimpleScribe<Builder>("The message") {
+	private final SimpleScribe<Builder<Builder<?>>> scribe = new SimpleScribe<Builder<Builder<?>>>("The message") {
 		@Override
-		protected Builder builder() {
-			return new Builder();
+		protected Builder<Builder<?>> builder() {
+			return new Builder<Builder<?>>();
 		}
 	};
 

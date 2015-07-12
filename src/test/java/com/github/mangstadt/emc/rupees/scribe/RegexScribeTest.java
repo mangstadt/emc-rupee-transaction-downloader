@@ -16,15 +16,15 @@ import com.github.mangstadt.emc.rupees.dto.RupeeTransaction.Builder;
 public class RegexScribeTest {
 	@Test
 	public void parse() {
-		RegexScribe<Builder> scribe = new RegexScribe<Builder>("Message from: (.*)") {
+		RegexScribe<Builder<Builder<?>>> scribe = new RegexScribe<Builder<Builder<?>>>("Message from: (.*)") {
 			private int count = 1;
 
 			@Override
-			protected Builder builder(Matcher m) {
+			protected Builder<Builder<?>> builder(Matcher m) {
 				assertEquals(1, count);
 				assertEquals("Notch", m.group(1));
 				count++;
-				return new Builder();
+				return new Builder<Builder<?>>();
 			}
 		};
 		assertNotNull(scribe.parse("Message from: Notch"));

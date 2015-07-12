@@ -7,7 +7,7 @@ import com.github.mangstadt.emc.rupees.dto.RupeeTransaction;
  * @author Michael Angstadt
  * @param <T> the builder class of the rupee transaction class
  */
-public abstract class SimpleScribe<T extends RupeeTransaction.Builder> extends RupeeTransactionScribe<T> {
+public abstract class SimpleScribe<T extends RupeeTransaction.Builder<?>> extends RupeeTransactionScribe<T> {
 	private final String message;
 
 	public SimpleScribe(String message) {
