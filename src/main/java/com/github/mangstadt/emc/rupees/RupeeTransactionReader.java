@@ -6,19 +6,19 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.net.ConnectException;
 import java.net.SocketTimeoutException;
+import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import org.apache.commons.lang3.time.DateUtils;
 import org.apache.http.client.CookieStore;
 import org.jsoup.nodes.Document;
 
@@ -27,6 +27,8 @@ import com.github.mangstadt.emc.net.EmcWebsiteConnectionImpl;
 import com.github.mangstadt.emc.net.InvalidSessionException;
 import com.github.mangstadt.emc.rupees.dto.RupeeTransaction;
 import com.github.mangstadt.emc.rupees.dto.RupeeTransactionPage;
+import com.google.common.collect.HashMultimap;
+import com.google.common.collect.Multimap;
 
 /**
  * Downloads rupee transactions from the EMC website. Use its {@link Builder}
@@ -43,7 +45,21 @@ public class RupeeTransactionReader implements Closeable {
 	private final BlockingQueue<RupeeTransactionPage> queue = new LinkedBlockingQueue<RupeeTransactionPage>();
 	private final RupeeTransactionPage noMoreElements = new RupeeTransactionPage(null, null, null, Collections.<RupeeTransaction> emptyList());
 	private final Map<Integer, RupeeTransactionPage> buffer = new HashMap<Integer, RupeeTransactionPage>();
-	private final Set<Integer> hashesOfReturnedTransactions = new HashSet<Integer>();
+
+	/**
+	 * Stores the hashes of each transaction that has been returned by the
+	 * next() method. This is to prevent duplicate transactions from being
+	 * returned if transactions are added to a user's rupee history while this
+	 * reader is reading it.
+	 * 
+	 * I probably could have stuck with a Set here (the hash is probably unique
+	 * enough), but I made this a Multimap to help prevent false positives from
+	 * happening (i.e. two non-duplicate transactions that have the same hash).
+	 * The key is the day that the transaction occurred on (the timestamp with
+	 * the time portion truncated), and the value is the hashes of the
+	 * transactions that occurred on that date.
+	 */
+	private final Multimap<Date, Integer> hashesOfReturnedTransactions = HashMultimap.create();
 
 	private final PageSource pageSource;
 	private final Integer startAtPage, stopAtPage;
@@ -211,7 +227,8 @@ public class RupeeTransactionReader implements Closeable {
 			 * transactions "down" one. This causes duplicate transactions to be
 			 * read.
 			 */
-			if (!hashesOfReturnedTransactions.add(transaction.hashCode())) {
+			Date date = DateUtils.truncate(transaction.getTs(), Calendar.DATE);
+			if (!hashesOfReturnedTransactions.put(date, transaction.hashCode())) {
 				continue;
 			}
 
