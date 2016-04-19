@@ -3,7 +3,7 @@
 	<groupId>com.github.mangstadt</groupId>
 	<artifactId>emc-rupee-transaction-downloader</artifactId>
 	<packaging>jar</packaging>
-	<version>1.0</version>
+	<version>1.1</version>
 	<name>EMC Rupee Transaction Downloader</name>
 	<url>http://github.com/mangstadt/emc-rupee-transaction-downloader</url>
 
