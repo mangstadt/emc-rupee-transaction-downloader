@@ -148,7 +148,7 @@ public class EmcWebsiteConnectionImpl implements EmcWebsiteConnection {
 		 * could not be reproduced when running via Eclipse.
 		 */
 
-		String base = "http://empireminecraft.com/rupees/transactions/";
+		String base = "https://empireminecraft.com/rupees/transactions/";
 		String url = base + "?page=" + pageNumber;
 
 		HttpGet request = new HttpGet(url);
@@ -164,13 +164,13 @@ public class EmcWebsiteConnectionImpl implements EmcWebsiteConnection {
 
 	@Override
 	public Document getProfilePage(String playerName) throws IOException {
-		String url = "http://u.emc.gs/" + UrlEscapers.urlPathSegmentEscaper().escape(playerName);
+		String url = "https://u.emc.gs/" + UrlEscapers.urlPathSegmentEscaper().escape(playerName);
 		HttpGet request = new HttpGet(url);
 		HttpResponse response = client.execute(request);
 		HttpEntity entity = response.getEntity();
 		InputStream in = entity.getContent();
 		try {
-			return Jsoup.parse(in, "UTF-8", "http://empireminecraft.com");
+			return Jsoup.parse(in, "UTF-8", "https://empireminecraft.com");
 		} finally {
 			IOUtils.closeQuietly(in);
 		}
@@ -179,7 +179,7 @@ public class EmcWebsiteConnectionImpl implements EmcWebsiteConnection {
 	@Override
 	public List<String> getOnlinePlayers(EmcServer server) throws IOException {
 		Integer serverNumber = serverNumbers.get(server);
-		String url = "http://empireminecraft.com/api/server-online-" + serverNumber + ".json";
+		String url = "https://empireminecraft.com/api/server-online-" + serverNumber + ".json";
 		HttpGet request = new HttpGet(url);
 		HttpResponse response = client.execute(request);
 
@@ -203,7 +203,7 @@ public class EmcWebsiteConnectionImpl implements EmcWebsiteConnection {
 	}
 
 	private void loadHomePage() throws IOException {
-		String url = "http://empireminecraft.com";
+		String url = "https://empireminecraft.com";
 		HttpGet request = new HttpGet(url);
 		HttpResponse response = client.execute(request);
 		HttpEntity entity = response.getEntity();
@@ -211,7 +211,7 @@ public class EmcWebsiteConnectionImpl implements EmcWebsiteConnection {
 	}
 
 	private boolean login(String username, String password) throws IOException {
-		String url = "http://empireminecraft.com/login/login";
+		String url = "https://empireminecraft.com/login/login";
 		HttpPost request = new HttpPost(url);
 
 		List<NameValuePair> params = new ArrayList<NameValuePair>();
