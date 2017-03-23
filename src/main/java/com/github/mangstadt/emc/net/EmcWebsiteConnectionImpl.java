@@ -2,12 +2,12 @@ package com.github.mangstadt.emc.net;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.Reader;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.http.Consts;
@@ -32,6 +32,11 @@ import org.jsoup.nodes.Document;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.net.UrlEscapers;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParseException;
+import com.google.gson.JsonParser;
 
 /**
  * Represents a connection to the EmpireMinecraft website.
@@ -183,23 +188,35 @@ public class EmcWebsiteConnectionImpl implements EmcWebsiteConnection {
 		HttpGet request = new HttpGet(url);
 		HttpResponse response = client.execute(request);
 
+		JsonElement root;
 		HttpEntity entity = response.getEntity();
-		String json;
+		Reader reader = new InputStreamReader(entity.getContent());
 		try {
-			json = EntityUtils.toString(entity);
+			root = new JsonParser().parse(reader);
+		} catch (JsonParseException e) {
+			throw new IOException(e);
 		} finally {
-			EntityUtils.consumeQuietly(entity);
+			IOUtils.closeQuietly(reader);
 		}
 
-		//TODO proper JSON parsing
-		Pattern nameRegex = Pattern.compile("\"name\":\"(.*?)\"");
-		Matcher matcher = nameRegex.matcher(json);
-		List<String> players = new ArrayList<String>();
-		while (matcher.find()) {
-			String playerName = matcher.group(1);
-			players.add(playerName);
+		try {
+			JsonArray array = root.getAsJsonArray();
+			List<String> players = new ArrayList<String>(array.size());
+			for (JsonElement element : array) {
+				JsonObject player = element.getAsJsonObject();
+				JsonElement name = player.get("name");
+				if (name != null) {
+					players.add(name.getAsString());
+				}
+			}
+			return players;
+		} catch (IllegalStateException e) {
+			/*
+			 * Thrown if the JSON is not structured as expected (e.g. if there's
+			 * an array where an object should be).
+			 */
+			throw new IOException(e);
 		}
-		return players;
 	}
 
 	private void loadHomePage() throws IOException {
