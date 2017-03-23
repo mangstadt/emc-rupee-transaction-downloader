@@ -6,11 +6,14 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.net.ConnectException;
 import java.net.SocketTimeoutException;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -27,6 +30,7 @@ import com.github.mangstadt.emc.net.EmcWebsiteConnectionImpl;
 import com.github.mangstadt.emc.net.InvalidSessionException;
 import com.github.mangstadt.emc.rupees.dto.RupeeTransaction;
 import com.github.mangstadt.emc.rupees.dto.RupeeTransactionPage;
+import com.github.mangstadt.emc.rupees.scribe.RupeeTransactionScribe;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 
@@ -34,8 +38,8 @@ import com.google.common.collect.Multimap;
  * Downloads rupee transactions from the EMC website. Use its {@link Builder}
  * class to create new instances.
  * @author Michael Angstadt
- * @see <a
- * href="http://www.empireminecraft.com/rupees/transactions">http://www.empireminecraft.com/rupees/transactions</a>
+ * @see <a href=
+ * "http://www.empireminecraft.com/rupees/transactions">http://www.empireminecraft.com/rupees/transactions</a>
  */
 public class RupeeTransactionReader implements Closeable {
 	private static final Logger logger = Logger.getLogger(RupeeTransactionReader.class.getName());
@@ -43,7 +47,13 @@ public class RupeeTransactionReader implements Closeable {
 	private Iterator<RupeeTransaction> transactionsOnCurrentPage;
 	private RupeeTransactionPage currentPage;
 	private final BlockingQueue<RupeeTransactionPage> queue = new LinkedBlockingQueue<RupeeTransactionPage>();
+
+	/**
+	 * When this object is added to the queue, it signals that there are no more
+	 * elements to process.
+	 */
 	private final RupeeTransactionPage noMoreElements = new RupeeTransactionPage(null, null, null, Collections.<RupeeTransaction> emptyList());
+
 	private final Map<Integer, RupeeTransactionPage> buffer = new HashMap<Integer, RupeeTransactionPage>();
 
 	/**
@@ -85,8 +95,11 @@ public class RupeeTransactionReader implements Closeable {
 		EmcWebsiteConnection connection = pageSource.createSession();
 		RupeeTransactionPage firstPage = pageSource.getPage(1, connection);
 
-		//get the date of the latest transaction so we know when we've reached the last transaction page
-		//(the first page is returned when you request a non-existent page number)
+		/*
+		 * Get the date of the latest transaction so we know when we've reached
+		 * the last transaction page (the first page is returned when you
+		 * request a non-existent page number)
+		 */
 		latestTransactionDate = firstPage.getFirstTransactionDate();
 
 		startAtDate = builder.startDate;
@@ -108,6 +121,11 @@ public class RupeeTransactionReader implements Closeable {
 			thread.setDaemon(true);
 			thread.setName(getClass().getSimpleName() + "-" + i);
 			thread.start();
+
+			/*
+			 * Ensure that each thread has its own connection object. Re-use the
+			 * connection object we created above for the first thread.
+			 */
 			if (i < threads - 1) {
 				connection = pageSource.recreateConnection(connection);
 			}
@@ -282,18 +300,15 @@ public class RupeeTransactionReader implements Closeable {
 					try {
 						transactionPage = pageSource.getPage(pageNumber, connection);
 					} catch (ConnectException e) {
-						//one user reported getting connection errors at various points while trying to download 12k pages: http://empireminecraft.com/threads/shop-statistics.22507/page-14#post-684085
-						//if there's a connection problem, try re-creating the connection
-						logger.log(Level.WARNING, "A connection error occurred while downloading transactions.  Re-creating the connection.", e);
-						connection = pageSource.recreateConnection(connection);
-						transactionPage = pageSource.getPage(pageNumber, connection);
+						transactionPage = reconnectAndRedownload(pageNumber, e);
 					} catch (SocketTimeoutException e) {
-						logger.log(Level.WARNING, "A connection error occurred while downloading transactions.  Re-creating the connection.", e);
-						connection = pageSource.recreateConnection(connection);
-						transactionPage = pageSource.getPage(pageNumber, connection);
+						transactionPage = reconnectAndRedownload(pageNumber, e);
 					}
 
-					//the session *shouldn't* expire while a download is in progress, but run a check in case the sky falls
+					/*
+					 * The session shouldn't expire while a download is in
+					 * progress, but run a check in case the sky falls.
+					 */
 					if (transactionPage == null) {
 						logger.warning("A transaction page couldn't be downloaded due to an invalid session token.  Re-creating the connection.");
 						connection = pageSource.createSession();
@@ -303,7 +318,11 @@ public class RupeeTransactionReader implements Closeable {
 						}
 					}
 
-					//EMC will load the first page if an invalid page number is given (in our case, if we're trying to download past the last page)
+					/*
+					 * EMC will load the first page if an invalid page number is
+					 * given (in our case, if we're trying to download past the
+					 * last page).
+					 */
 					boolean lastPageReached = pageNumber > 1 && transactionPage.getFirstTransactionDate().getTime() >= latestTransactionDate.getTime();
 					if (lastPageReached) {
 						break;
@@ -374,12 +393,35 @@ public class RupeeTransactionReader implements Closeable {
 				}
 			}
 		}
+
+		/**
+		 * <p>
+		 * Recreates the HTTP connection and then re-downloads the transaction
+		 * page. This is done in response to a connection failure.
+		 * </p>
+		 * <p>
+		 * <a href=
+		 * "http://empireminecraft.com/threads/shop-statistics.22507/page-14#post-684085">One
+		 * user reported</a> getting connection errors at various points while
+		 * trying to download 12k pages. If there's a connection problem, try
+		 * re-creating the connection.
+		 * </p>
+		 * @param pageNumber the transaction page number
+		 * @param thrown the exception that was thrown
+		 * @return the re-downloaded transaction page
+		 * @throws IOException if there's still a problem downloading the page
+		 */
+		private RupeeTransactionPage reconnectAndRedownload(int pageNumber, Throwable thrown) throws IOException {
+			logger.log(Level.WARNING, "A connection error occurred while downloading transactions.  Re-creating the connection.", thrown);
+			connection = pageSource.recreateConnection(connection);
+			return pageSource.getPage(pageNumber, connection);
+		}
 	}
 
 	@Override
 	public synchronized void close() throws IOException {
 		cancel = true;
-		queue.add(noMoreElements); //null values cannot be added to the queue
+		queue.add(noMoreElements);
 	}
 
 	/**
@@ -388,6 +430,7 @@ public class RupeeTransactionReader implements Closeable {
 	 */
 	public static class Builder {
 		private PageSource pageSource;
+		private List<RupeeTransactionScribe<?>> scribes = new ArrayList<RupeeTransactionScribe<?>>();
 		private RupeeTransactionPageScraper pageScraper;
 		private Integer startPage = 1, stopPage;
 		private Date startDate, stopDate;
@@ -403,19 +446,12 @@ public class RupeeTransactionReader implements Closeable {
 			this.pageSource = pageSource;
 		}
 
+		/**
+		 * Use a previously authenticated session.
+		 * @param cookieStore the session's cookies
+		 */
 		public Builder(final CookieStore cookieStore) {
-			pageSource = new PageSource() {
-				@Override
-				public RupeeTransactionPage getPage(int pageNumber, EmcWebsiteConnection connection) throws IOException {
-					Document document = connection.getRupeeTransactionPage(pageNumber);
-					return pageScraper.scrape(document);
-				}
-
-				@Override
-				public EmcWebsiteConnection recreateConnection(EmcWebsiteConnection connection) throws IOException {
-					return new EmcWebsiteConnectionImpl(connection.getCookieStore());
-				}
-
+			pageSource = new PageSourceImpl() {
 				@Override
 				public EmcWebsiteConnection createSession() throws IOException {
 					return new EmcWebsiteConnectionImpl(cookieStore);
@@ -424,22 +460,12 @@ public class RupeeTransactionReader implements Closeable {
 		}
 
 		/**
+		 * Authenticate using the player's username and password.
 		 * @param username the player's username
 		 * @param password the player's password
 		 */
 		public Builder(final String username, final String password) {
-			pageSource = new PageSource() {
-				@Override
-				public RupeeTransactionPage getPage(int pageNumber, EmcWebsiteConnection connection) throws IOException {
-					Document document = connection.getRupeeTransactionPage(pageNumber);
-					return pageScraper.scrape(document);
-				}
-
-				@Override
-				public EmcWebsiteConnection recreateConnection(EmcWebsiteConnection connection) throws IOException {
-					return new EmcWebsiteConnectionImpl(connection.getCookieStore());
-				}
-
+			pageSource = new PageSourceImpl() {
 				@Override
 				public EmcWebsiteConnection createSession() throws IOException {
 					return new EmcWebsiteConnectionImpl(username, password);
@@ -448,19 +474,19 @@ public class RupeeTransactionReader implements Closeable {
 		}
 
 		/**
-		 * Sets the object used to scrape the rupee transaction pages. Only call
-		 * this if you are using custom scribe classes.
-		 * @param pageScraper the page scraper
+		 * Adds one or more custom transaction scribes to the reader.
+		 * @param scribes the scribes to add
 		 * @return this
 		 */
-		public Builder pageScraper(RupeeTransactionPageScraper pageScraper) {
-			this.pageScraper = pageScraper;
+		public Builder scribes(RupeeTransactionScribe<?>... scribes) {
+			this.scribes.addAll(Arrays.asList(scribes));
 			return this;
 		}
 
 		/**
-		 * Sets the page to start parsing at.
-		 * @param page the page
+		 * Sets the page number that the reader will start parsing on. By
+		 * default, the reader will start parsing on page 1.
+		 * @param page the start page
 		 * @return this
 		 */
 		public Builder start(Integer page) {
@@ -469,13 +495,19 @@ public class RupeeTransactionReader implements Closeable {
 			return this;
 		}
 
+		/**
+		 * Gets the page number that the reader will start parsing on. By
+		 * default, the reader will start parsing on page 1.
+		 * @return the start page or null if a start date is defined
+		 */
 		public Integer startPage() {
 			return startPage;
 		}
 
 		/**
-		 * Sets the transaction date to start parsing at.
-		 * @param date the date
+		 * Sets the transaction date to start parsing on. By default, the reader
+		 * will start parsing at the very beginning.
+		 * @param date the start date
 		 * @return this
 		 */
 		public Builder start(Date date) {
@@ -484,13 +516,20 @@ public class RupeeTransactionReader implements Closeable {
 			return this;
 		}
 
+		/**
+		 * Gets the date that the reader will start parsing on. By default, the
+		 * reader will start parsing at the very beginning.
+		 * @return the start date or null if not set
+		 */
 		public Date startDate() {
 			return startDate;
 		}
 
 		/**
-		 * Sets the page to stop parsing at (inclusive).
-		 * @param page the page
+		 * Sets the page number to stop parsing on. By default, the reader will
+		 * continue parsing until the last page has been reached.
+		 * @param page the page number to stop parsing on (inclusive) or null to
+		 * keep parsing until the end
 		 * @return this
 		 */
 		public Builder stop(Integer page) {
@@ -499,13 +538,21 @@ public class RupeeTransactionReader implements Closeable {
 			return this;
 		}
 
+		/**
+		 * Gets the page number to stop parsing on. By default, the reader will
+		 * continue parsing until the last page has been reached.
+		 * @return the page number to stop parsing on (inclusive) or null to
+		 * keep parsing until the end
+		 */
 		public Integer stopPage() {
 			return stopPage;
 		}
 
 		/**
-		 * Sets the transaction date to stop parsing at (exclusive).
-		 * @param date the date
+		 * Sets the transaction date to stop parsing on. By default, the reader
+		 * will continue parsing until the last page has been reached.
+		 * @param date the stop date (exclusive) or null to keep parsing until
+		 * the end
 		 * @return this
 		 */
 		public Builder stop(Date date) {
@@ -514,16 +561,29 @@ public class RupeeTransactionReader implements Closeable {
 			return this;
 		}
 
+		/**
+		 * Gets the transaction date to stop parsing on. By default, the reader
+		 * will continue parsing until the last page has been reached.
+		 * @return date the stop date (exclusive) or null to keep parsing until
+		 * the end
+		 */
 		public Date stopDate() {
 			return stopDate;
 		}
 
 		/**
-		 * Sets the number of background threads to use for downloading rupee
-		 * transaction pages from the website. Having multiple threads
-		 * significantly improves the speed of the reader, due to the inherent
-		 * network latency involved when downloading data from the Internet.
-		 * @param threads the number of threads (defaults to 4)
+		 * <p>
+		 * Sets the number of background threads to use for downloading and
+		 * parsing rupee transaction pages from the website. In other words,
+		 * this method sets the number of transaction pages that can be
+		 * downloaded at once. By default, the reader has 4 threads.
+		 * </p>
+		 * <p>
+		 * Having multiple threads significantly improves the speed of the
+		 * reader, due to the inherent network latency involved when downloading
+		 * data from the Internet.
+		 * </p>
+		 * @param threads the number of threads
 		 * @return this
 		 */
 		public Builder threads(int threads) {
@@ -534,16 +594,15 @@ public class RupeeTransactionReader implements Closeable {
 		/**
 		 * Constructs the {@link RupeeTransactionReader} object.
 		 * @return the object
-		 * @throws IOException
+		 * @throws IOException if there's a problem initializing the connection
+		 * to the EMC website
 		 */
 		public RupeeTransactionReader build() throws IOException {
 			if (threads <= 0) {
 				threads = 1;
 			}
 
-			if (pageScraper == null) {
-				pageScraper = new RupeeTransactionPageScraper();
-			}
+			pageScraper = new RupeeTransactionPageScraper(scribes);
 
 			if (stopPage != null && stopPage < 1) {
 				stopPage = 1;
@@ -551,18 +610,49 @@ public class RupeeTransactionReader implements Closeable {
 
 			return new RupeeTransactionReader(this);
 		}
+
+		private abstract class PageSourceImpl implements PageSource {
+			@Override
+			public RupeeTransactionPage getPage(int pageNumber, EmcWebsiteConnection connection) throws IOException {
+				Document document = connection.getRupeeTransactionPage(pageNumber);
+				return pageScraper.scrape(document);
+			}
+
+			@Override
+			public EmcWebsiteConnection recreateConnection(EmcWebsiteConnection connection) throws IOException {
+				return new EmcWebsiteConnectionImpl(connection.getCookieStore());
+			}
+		}
 	}
 
 	/**
-	 * Produces {@link RupeeTransactionPage} objects. Meant to be used for unit
-	 * testing.
+	 * Produces {@link RupeeTransactionPage} objects. This interface is here so
+	 * the unit tests can inject transaction pages into the workflow.
 	 * @author Michael Angstadt
 	 */
 	interface PageSource {
+		/**
+		 * Retrieves a transaction page.
+		 * @param pageNumber the page number
+		 * @param connection the connection to the EMC website
+		 * @return the transaction page
+		 * @throws IOException if there is a problem getting the page
+		 */
 		RupeeTransactionPage getPage(int pageNumber, EmcWebsiteConnection connection) throws IOException;
 
+		/**
+		 * Recreates the connection to an existing, authenticated session.
+		 * @param connection the old connection
+		 * @return the new connection
+		 * @throws IOException if there's a problem recreating the connection
+		 */
 		EmcWebsiteConnection recreateConnection(EmcWebsiteConnection connection) throws IOException;
 
+		/**
+		 * Creates a new, authenticated session on the EMC website.
+		 * @return the connection to the session
+		 * @throws IOException if there's a problem creating the connection
+		 */
 		EmcWebsiteConnection createSession() throws IOException;
 	}
 }

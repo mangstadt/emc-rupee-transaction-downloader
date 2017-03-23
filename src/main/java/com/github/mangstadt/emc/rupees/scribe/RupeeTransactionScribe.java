@@ -18,6 +18,12 @@ public abstract class RupeeTransactionScribe<T extends RupeeTransaction.Builder<
 	 */
 	public abstract T parse(String description);
 
+	/**
+	 * Parses a number that may or may not have commas in it.
+	 * @param value the string value (e.g. "12,560")
+	 * @return the parsed number
+	 * @throws NumberFormatException if the string value can't be parsed
+	 */
 	protected static int parseNumber(String value) {
 		value = value.replace(",", "");
 		return Integer.parseInt(value);

@@ -4,6 +4,7 @@ import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
@@ -59,7 +60,7 @@ public class RupeeTransactionPageScraper {
 	 * @param customScribes any additional, custom scribes to use to parse the
 	 * transactions
 	 */
-	public RupeeTransactionPageScraper(List<RupeeTransactionScribe<?>> customScribes) {
+	public RupeeTransactionPageScraper(Collection<RupeeTransactionScribe<?>> customScribes) {
 		this.scribes.addAll(customScribes);
 	}
 
@@ -85,13 +86,22 @@ public class RupeeTransactionPageScraper {
 		//@formatter:on
 	}
 
+	/**
+	 * Parses the transactions from a transaction page.
+	 * @param document the transaction HTML page
+	 * @return the transactions or null if the given HTML page is not a rupee
+	 * transaction page
+	 */
 	private List<RupeeTransaction> parseTransactions(Document document) {
 		Element containerElement = document.select("ol.sectionItems").first();
 		if (containerElement == null) {
 			return null;
 		}
 
-		//set initial capacity to 30, because each rupee transaction page contains 30 transactions
+		/*
+		 * Set initial capacity to 30 because each rupee transaction page
+		 * contains that many transactions.
+		 */
 		List<RupeeTransaction> transactions = new ArrayList<RupeeTransaction>(30);
 
 		for (Element element : containerElement.select("li.sectionItem")) {
@@ -119,7 +129,10 @@ public class RupeeTransactionPageScraper {
 
 				transactions.add(builder.build());
 			} catch (Exception e) {
-				//skip the transaction if any of the fields cannot be properly parsed
+				/*
+				 * Skip the transaction if any of the fields cannot be properly
+				 * parsed.
+				 */
 				logger.log(Level.WARNING, "Problem parsing rupee transaction, skipping.", e);
 			}
 		}
@@ -127,6 +140,11 @@ public class RupeeTransactionPageScraper {
 		return transactions;
 	}
 
+	/**
+	 * Parses the player's total rupee balance from a transaction page.
+	 * @param document the transaction HTML page
+	 * @return the rupee balance or null if not found
+	 */
 	private Integer parseRupeeBalance(Document document) {
 		Element element = document.getElementById("rupeesBalance");
 		if (element == null) {
@@ -145,6 +163,11 @@ public class RupeeTransactionPageScraper {
 		}
 	}
 
+	/**
+	 * Parses the page number of a transaction page
+	 * @param document the transaction HTML page
+	 * @return the page number or null if not found
+	 */
 	private Integer parseCurrentPage(Document document) {
 		Element element = document.select(".PageNav").first();
 		if (element == null) {
@@ -158,6 +181,11 @@ public class RupeeTransactionPageScraper {
 		}
 	}
 
+	/**
+	 * Parse the total number of transaction pages from a transaction page.
+	 * @param document the transaction HTML page
+	 * @return the total number of pages or null if not found
+	 */
 	private Integer parseTotalPages(Document document) {
 		Element element = document.select(".PageNav").first();
 		if (element == null) {
@@ -171,31 +199,50 @@ public class RupeeTransactionPageScraper {
 		}
 	}
 
+	/**
+	 * Parses a transaction's description.
+	 * @param transactionElement the transaction HTML element
+	 * @return the description
+	 */
 	private String parseDescription(Element transactionElement) {
 		Element descriptionElement = transactionElement.select("div.description").first();
 		return descriptionElement.text();
 	}
 
+	/**
+	 * Parses a transaction's timestamp.
+	 * @param transactionElement the transaction HTML element
+	 * @return the timestamp
+	 * @throws ParseException if the timestamp can't be parsed
+	 */
 	private Date parseTs(Element transactionElement) throws ParseException {
 		Element tsElement = transactionElement.select("div.time abbr[data-time]").first();
-		if (tsElement == null) {
-			tsElement = transactionElement.select("div.time span[title]").first();
-			String tsText = tsElement.attr("title");
-
-			//instantiate new DateFormat object to keep this class thread-safe
-			//English month names are used, no matter where the player lives!
-			DateFormat df = new SimpleDateFormat("MMM dd, yyyy 'at' hh:mm aa", Locale.US);
-
-			return df.parse(tsText);
+		if (tsElement != null) {
+			String dataTime = tsElement.attr("data-time");
+			long ts = Long.parseLong(dataTime) * 1000;
+			return new Date(ts);
 		}
 
-		String dataTime = tsElement.attr("data-time");
-		long ts = Long.parseLong(dataTime) * 1000;
-		return new Date(ts);
+		tsElement = transactionElement.select("div.time span[title]").first();
+		String tsText = tsElement.attr("title");
+
+		/*
+		 * Instantiate new DateFormat object to keep this class thread-safe.
+		 * Also, note that English month names are used, no matter where the
+		 * player lives.
+		 */
+		DateFormat df = new SimpleDateFormat("MMM dd, yyyy 'at' hh:mm aa", Locale.US);
+
+		return df.parse(tsText);
 	}
 
-	private int parseAmount(Element element) {
-		Element amountElement = element.select("div.amount").first();
+	/**
+	 * Parses the amount of rupees that were processed in a transaction.
+	 * @param transactionElement the transaction HTML element
+	 * @return the amount
+	 */
+	private int parseAmount(Element transactionElement) {
+		Element amountElement = transactionElement.select("div.amount").first();
 		String amountText = amountElement.text();
 
 		Matcher m = amountRegex.matcher(amountText);
@@ -208,13 +255,23 @@ public class RupeeTransactionPageScraper {
 		return amount;
 	}
 
-	private int parseBalance(Element element) {
-		Element balanceElement = element.select("div.balance").first();
+	/**
+	 * Parses the player's balance after the transaction was applied.
+	 * @param transactionElement the transaction HTML element
+	 * @return the balance
+	 */
+	private int parseBalance(Element transactionElement) {
+		Element balanceElement = transactionElement.select("div.balance").first();
 		String balanceText = balanceElement.text();
 		return parseNumber(balanceText);
 	}
 
-	private int parseNumber(String value) {
+	/**
+	 * Parses a number that may or may not have commas in it.
+	 * @param value the string value (e.g. "12,560")
+	 * @return the parsed number
+	 */
+	private static int parseNumber(String value) {
 		value = value.replace(",", "");
 		return Integer.parseInt(value);
 	}
