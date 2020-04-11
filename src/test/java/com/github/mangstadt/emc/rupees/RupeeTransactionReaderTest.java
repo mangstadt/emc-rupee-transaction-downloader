@@ -56,7 +56,7 @@ public class RupeeTransactionReaderTest {
 		pageProducer.sleepOnPage(2, 1000);
 		pageProducer.sleepOnPage(3, 500);
 
-		List<RupeeTransaction> expectedTransactions = new ArrayList<RupeeTransaction>();
+		List<RupeeTransaction> expectedTransactions = new ArrayList<>();
 		for (RupeeTransactionPage page : pages) {
 			expectedTransactions.addAll(page.getTransactions());
 		}
@@ -79,12 +79,12 @@ public class RupeeTransactionReaderTest {
 	public void ignore_duplicate_transactions() throws IOException {
 		TransactionGenerator gen = new TransactionGenerator();
 		int pageCount = 1;
-		List<RupeeTransactionPage> pages = new ArrayList<RupeeTransactionPage>();
+		List<RupeeTransactionPage> pages = new ArrayList<>();
 
 		List<RupeeTransaction> transactionsPage1 = gen.next(5);
 		pages.add(new RupeeTransactionPage(1, pageCount++, 2, transactionsPage1));
 
-		List<RupeeTransaction> transactionsPage2 = new ArrayList<RupeeTransaction>();
+		List<RupeeTransaction> transactionsPage2 = new ArrayList<>();
 		transactionsPage2.add(transactionsPage1.get(3));
 		transactionsPage2.add(transactionsPage1.get(4));
 		transactionsPage2.addAll(gen.next(3));
@@ -92,7 +92,7 @@ public class RupeeTransactionReaderTest {
 
 		PageProducerMock pageProducer = spy(new PageProducerMock(pages));
 
-		List<RupeeTransaction> expectedTransactions = new ArrayList<RupeeTransaction>();
+		List<RupeeTransaction> expectedTransactions = new ArrayList<>();
 		expectedTransactions.addAll(transactionsPage1);
 		expectedTransactions.addAll(transactionsPage2.subList(2, 5));
 
@@ -125,7 +125,7 @@ public class RupeeTransactionReaderTest {
 
 		PageProducerMock pageProducer = spy(new PageProducerMock(pages));
 
-		List<RupeeTransaction> expectedTransactions = new ArrayList<RupeeTransaction>();
+		List<RupeeTransaction> expectedTransactions = new ArrayList<>();
 		for (int i = 1; i < pages.size(); i++) {
 			expectedTransactions.addAll(pages.get(i).getTransactions());
 		}
@@ -163,7 +163,7 @@ public class RupeeTransactionReaderTest {
 
 		PageProducerMock pageProducer = spy(new PageProducerMock(pages));
 
-		List<RupeeTransaction> expectedTransactions = new ArrayList<RupeeTransaction>();
+		List<RupeeTransaction> expectedTransactions = new ArrayList<>();
 		expectedTransactions.addAll(pages.get(1).getTransactions().subList(2, 5));
 		for (int i = 2; i < pages.size(); i++) {
 			expectedTransactions.addAll(pages.get(i).getTransactions());
@@ -190,14 +190,14 @@ public class RupeeTransactionReaderTest {
 
 		TransactionGenerator gen = new TransactionGenerator(latestTransactionDate);
 		int pageCount = 1;
-		List<RupeeTransactionPage> pages = new ArrayList<RupeeTransactionPage>();
+		List<RupeeTransactionPage> pages = new ArrayList<>();
 		pages.add(new RupeeTransactionPage(1000, pageCount++, 2, gen.next(5)));
 		gen.next(13);
 		pages.add(new RupeeTransactionPage(1000, pageCount++, 2, gen.next(5)));
 
 		PageProducerMock pageProducer = spy(new PageProducerMock(pages));
 
-		List<RupeeTransaction> expectedTransactions = new ArrayList<RupeeTransaction>();
+		List<RupeeTransaction> expectedTransactions = new ArrayList<>();
 		expectedTransactions.addAll(pages.get(1).getTransactions());
 
 		//@formatter:off
@@ -230,7 +230,7 @@ public class RupeeTransactionReaderTest {
 
 		PageProducerMock pageProducer = spy(new PageProducerMock(pages));
 
-		List<RupeeTransaction> expectedTransactions = new ArrayList<RupeeTransaction>();
+		List<RupeeTransaction> expectedTransactions = new ArrayList<>();
 		for (int i = 0; i < 3; i++) {
 			expectedTransactions.addAll(pages.get(i).getTransactions());
 		}
@@ -265,7 +265,7 @@ public class RupeeTransactionReaderTest {
 
 		PageProducerMock pageProducer = spy(new PageProducerMock(pages));
 
-		List<RupeeTransaction> expectedTransactions = new ArrayList<RupeeTransaction>();
+		List<RupeeTransaction> expectedTransactions = new ArrayList<>();
 		for (RupeeTransactionPage page : pages) {
 			expectedTransactions.addAll(page.getTransactions());
 		}
@@ -303,7 +303,7 @@ public class RupeeTransactionReaderTest {
 
 		PageProducerMock pageProducer = spy(new PageProducerMock(pages));
 
-		List<RupeeTransaction> expectedTransactions = new ArrayList<RupeeTransaction>();
+		List<RupeeTransaction> expectedTransactions = new ArrayList<>();
 		expectedTransactions.addAll(pages.get(0).getTransactions());
 		expectedTransactions.addAll(pages.get(1).getTransactions().subList(0, 2));
 
@@ -410,7 +410,7 @@ public class RupeeTransactionReaderTest {
 			PageProducerMock pageProducer = spy(new PageProducerMock(pages));
 			pageProducer.throwOnPage(2, exception);
 
-			List<RupeeTransaction> expectedTransactions = new ArrayList<RupeeTransaction>();
+			List<RupeeTransaction> expectedTransactions = new ArrayList<>();
 			for (RupeeTransactionPage page : pages) {
 				expectedTransactions.addAll(page.getTransactions());
 			}
@@ -453,7 +453,7 @@ public class RupeeTransactionReaderTest {
 			IOException secondException = exception.newInstance();
 			pageProducer.throwOnPage(3, secondException);
 
-			List<RupeeTransaction> expectedTransactions = new ArrayList<RupeeTransaction>();
+			List<RupeeTransaction> expectedTransactions = new ArrayList<>();
 			expectedTransactions.addAll(pages.get(0).getTransactions());
 			expectedTransactions.addAll(pages.get(1).getTransactions());
 
@@ -497,7 +497,7 @@ public class RupeeTransactionReaderTest {
 		Exception exception = new RuntimeException();
 		pageProducer.throwOnPage(3, exception);
 
-		List<RupeeTransaction> expectedTransactions = new ArrayList<RupeeTransaction>();
+		List<RupeeTransaction> expectedTransactions = new ArrayList<>();
 		expectedTransactions.addAll(pages.get(0).getTransactions());
 		expectedTransactions.addAll(pages.get(1).getTransactions());
 
@@ -536,7 +536,7 @@ public class RupeeTransactionReaderTest {
 		PageProducerMock pageProducer = spy(new PageProducerMock(pages));
 		pageProducer.expireOnPage(2);
 
-		List<RupeeTransaction> expectedTransactions = new ArrayList<RupeeTransaction>();
+		List<RupeeTransaction> expectedTransactions = new ArrayList<>();
 		for (RupeeTransactionPage page : pages) {
 			expectedTransactions.addAll(page.getTransactions());
 		}
@@ -574,7 +574,7 @@ public class RupeeTransactionReaderTest {
 		pageProducer.expireOnPage(2);
 		pageProducer.expireOnPage(2);
 
-		List<RupeeTransaction> expectedTransactions = new ArrayList<RupeeTransaction>();
+		List<RupeeTransaction> expectedTransactions = new ArrayList<>();
 		expectedTransactions.addAll(pages.get(0).getTransactions());
 
 		//@formatter:off
@@ -623,13 +623,13 @@ public class RupeeTransactionReaderTest {
 			this.pages = pages;
 
 			int pageCount = pages.size();
-			exceptions = new ArrayList<List<Exception>>(pageCount);
-			sleep = new ArrayList<Integer>(pageCount);
-			expires = new ArrayList<List<Boolean>>(pageCount);
+			exceptions = new ArrayList<>(pageCount);
+			sleep = new ArrayList<>(pageCount);
+			expires = new ArrayList<>(pageCount);
 			for (int i = 0; i < pageCount; i++) {
-				exceptions.add(new ArrayList<Exception>());
+				exceptions.add(new ArrayList<>());
 				sleep.add(null);
-				expires.add(new ArrayList<Boolean>());
+				expires.add(new ArrayList<>());
 			}
 		}
 
@@ -718,7 +718,7 @@ public class RupeeTransactionReaderTest {
 			date = date.minusHours(1);
 
 			//@formatter:off
-			return new RupeeTransaction.Builder<RupeeTransaction.Builder<?>>()
+			return new RupeeTransaction.Builder<>()
 				.ts(ts)
 				.amount(1)
 				.balance(1)
@@ -728,7 +728,7 @@ public class RupeeTransactionReaderTest {
 		}
 
 		public List<RupeeTransaction> next(int count) {
-			List<RupeeTransaction> list = new ArrayList<RupeeTransaction>(count);
+			List<RupeeTransaction> list = new ArrayList<>(count);
 			for (int i = 0; i < count; i++) {
 				list.add(next());
 			}

@@ -89,7 +89,7 @@ public class RupeeTransactionPageScraperTest {
 	@Test
 	public void custom_scribe() throws Exception {
 		Document document = load("transaction-page-sample.html");
-		RupeeTransactionPageScraper scraper = new RupeeTransactionPageScraper(Arrays.<RupeeTransactionScribe<?>> asList(new DonationTransactionScribe()));
+		RupeeTransactionPageScraper scraper = new RupeeTransactionPageScraper(Arrays.asList(new DonationTransactionScribe()));
 		RupeeTransactionPage page = scraper.scrape(document);
 
 		assertEquals(Integer.valueOf(1), page.getPage());
@@ -141,7 +141,7 @@ public class RupeeTransactionPageScraperTest {
 	@Test
 	public void scribe_throws_exception() throws Exception {
 		Document document = load("transaction-page-sample.html");
-		RupeeTransactionPageScraper scraper = new RupeeTransactionPageScraper(Arrays.<RupeeTransactionScribe<?>> asList(new ExceptionScribe()));
+		RupeeTransactionPageScraper scraper = new RupeeTransactionPageScraper(Arrays.asList(new ExceptionScribe()));
 		RupeeTransactionPage page = scraper.scrape(document);
 
 		assertEquals(Integer.valueOf(1), page.getPage());

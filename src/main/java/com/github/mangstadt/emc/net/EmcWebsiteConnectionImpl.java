@@ -191,7 +191,7 @@ public class EmcWebsiteConnectionImpl implements EmcWebsiteConnection {
 
 		try {
 			JsonArray array = root.getAsJsonArray();
-			List<String> players = new ArrayList<String>(array.size());
+			List<String> players = new ArrayList<>(array.size());
 			for (JsonElement element : array) {
 				JsonObject player = element.getAsJsonObject();
 				JsonElement name = player.get("name");
@@ -221,7 +221,7 @@ public class EmcWebsiteConnectionImpl implements EmcWebsiteConnection {
 		String url = "https://empireminecraft.com/login/login";
 		HttpPost request = new HttpPost(url);
 
-		List<NameValuePair> params = new ArrayList<NameValuePair>();
+		List<NameValuePair> params = new ArrayList<>();
 		params.add(new BasicNameValuePair("login", username));
 		params.add(new BasicNameValuePair("password", password));
 		params.add(new BasicNameValuePair("cookie_check", "1"));

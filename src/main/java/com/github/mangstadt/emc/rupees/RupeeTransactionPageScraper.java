@@ -45,7 +45,7 @@ public class RupeeTransactionPageScraper {
 	 */
 	private final DateTimeFormatter transactionTsFormatter = DateTimeFormatter.ofPattern("MMM d, yyyy 'at' h:mm a", Locale.US);
 
-	private final List<RupeeTransactionScribe<?>> scribes = new ArrayList<RupeeTransactionScribe<?>>();
+	private final List<RupeeTransactionScribe<?>> scribes = new ArrayList<>();
 	{
 		scribes.add(new ShopTransactionScribe());
 		scribes.add(new PaymentTransactionScribe());
@@ -108,7 +108,7 @@ public class RupeeTransactionPageScraper {
 		 * Set initial capacity to 30 because each rupee transaction page
 		 * contains that many transactions.
 		 */
-		List<RupeeTransaction> transactions = new ArrayList<RupeeTransaction>(30);
+		List<RupeeTransaction> transactions = new ArrayList<>(30);
 
 		for (Element element : containerElement.select("li.sectionItem")) {
 			try {
@@ -125,7 +125,7 @@ public class RupeeTransactionPageScraper {
 					}
 				}
 				if (builder == null) {
-					builder = new RupeeTransaction.Builder<RupeeTransaction.Builder<?>>();
+					builder = new RupeeTransaction.Builder<>();
 				}
 
 				builder.ts(parseTs(element));

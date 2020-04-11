@@ -45,15 +45,15 @@ public class RupeeTransactionReader implements Closeable {
 
 	private Iterator<RupeeTransaction> transactionsOnCurrentPage;
 	private RupeeTransactionPage currentPage;
-	private final BlockingQueue<RupeeTransactionPage> queue = new LinkedBlockingQueue<RupeeTransactionPage>();
+	private final BlockingQueue<RupeeTransactionPage> queue = new LinkedBlockingQueue<>();
 
 	/**
 	 * When this object is added to the queue, it signals that there are no more
 	 * elements to process.
 	 */
-	private final RupeeTransactionPage noMoreElements = new RupeeTransactionPage(null, null, null, Collections.<RupeeTransaction> emptyList());
+	private final RupeeTransactionPage noMoreElements = new RupeeTransactionPage(null, null, null, Collections.emptyList());
 
-	private final Map<Integer, RupeeTransactionPage> buffer = new HashMap<Integer, RupeeTransactionPage>();
+	private final Map<Integer, RupeeTransactionPage> buffer = new HashMap<>();
 
 	/**
 	 * Stores the hashes of each transaction that has been returned by the
@@ -428,7 +428,7 @@ public class RupeeTransactionReader implements Closeable {
 	 */
 	public static class Builder {
 		private PageSource pageSource;
-		private List<RupeeTransactionScribe<?>> scribes = new ArrayList<RupeeTransactionScribe<?>>();
+		private List<RupeeTransactionScribe<?>> scribes = new ArrayList<>();
 		private RupeeTransactionPageScraper pageScraper;
 		private Integer startPage = 1, stopPage;
 		private LocalDateTime startDate, stopDate;
