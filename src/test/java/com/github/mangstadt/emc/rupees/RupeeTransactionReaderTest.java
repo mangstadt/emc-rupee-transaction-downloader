@@ -76,7 +76,7 @@ public class RupeeTransactionReaderTest {
 	}
 
 	@Test
-	public void ignore_duplicate_transactions() throws IOException {
+	public void ignore_duplicate_transactions() throws Exception {
 		TransactionGenerator gen = new TransactionGenerator();
 		int pageCount = 1;
 		List<RupeeTransactionPage> pages = new ArrayList<>();
@@ -111,7 +111,7 @@ public class RupeeTransactionReaderTest {
 	}
 
 	@Test
-	public void startPage() throws IOException {
+	public void startPage() throws Exception {
 		//@formatter:off
 		TransactionGenerator gen = new TransactionGenerator();
 		int pageCount = 1;
@@ -146,7 +146,7 @@ public class RupeeTransactionReaderTest {
 	}
 
 	@Test
-	public void startDate() throws IOException {
+	public void startDate() throws Exception {
 		LocalDateTime latestTransactionDate = LocalDateTime.now();
 
 		//@formatter:off
@@ -185,7 +185,7 @@ public class RupeeTransactionReaderTest {
 	}
 
 	@Test
-	public void startDate_not_on_any_page() throws IOException {
+	public void startDate_not_on_any_page() throws Exception {
 		LocalDateTime latestTransactionDate = LocalDateTime.now();
 
 		TransactionGenerator gen = new TransactionGenerator(latestTransactionDate);
@@ -216,7 +216,7 @@ public class RupeeTransactionReaderTest {
 	}
 
 	@Test
-	public void stopPage() throws IOException {
+	public void stopPage() throws Exception {
 		//@formatter:off
 		TransactionGenerator gen = new TransactionGenerator();
 		int pageCount = 1;
@@ -251,7 +251,7 @@ public class RupeeTransactionReaderTest {
 	}
 
 	@Test
-	public void stopPage_greater_than_last_page() throws IOException {
+	public void stopPage_greater_than_last_page() throws Exception {
 		//@formatter:off
 		TransactionGenerator gen = new TransactionGenerator();
 		int pageCount = 1;
@@ -286,7 +286,7 @@ public class RupeeTransactionReaderTest {
 	}
 
 	@Test
-	public void stopDate() throws IOException {
+	public void stopDate() throws Exception {
 		LocalDateTime latestTransactionDate = LocalDateTime.now();
 
 		//@formatter:off
@@ -323,7 +323,7 @@ public class RupeeTransactionReaderTest {
 	}
 
 	@Test
-	public void stopDate_same_as_first_transaction_date() throws IOException {
+	public void stopDate_same_as_first_transaction_date() throws Exception {
 		LocalDateTime latestTransactionDate = LocalDateTime.now();
 
 		//@formatter:off
@@ -358,7 +358,7 @@ public class RupeeTransactionReaderTest {
 	}
 
 	@Test
-	public void stopDate_after_first_transaction_date() throws IOException {
+	public void stopDate_after_first_transaction_date() throws Exception {
 		LocalDateTime latestTransactionDate = LocalDateTime.now();
 
 		//@formatter:off
@@ -521,7 +521,7 @@ public class RupeeTransactionReaderTest {
 	}
 
 	@Test
-	public void session_expired() throws IOException {
+	public void session_expired() throws Exception {
 		//@formatter:off
 		TransactionGenerator gen = new TransactionGenerator();
 		int pageCount = 1;
@@ -558,7 +558,7 @@ public class RupeeTransactionReaderTest {
 	}
 
 	@Test
-	public void session_expired_cannot_recreate() throws IOException {
+	public void session_expired_cannot_recreate() throws Exception {
 		//@formatter:off
 		TransactionGenerator gen = new TransactionGenerator();
 		int pageCount = 1;
