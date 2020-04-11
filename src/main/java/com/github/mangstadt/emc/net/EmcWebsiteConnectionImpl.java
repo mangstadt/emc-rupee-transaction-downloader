@@ -221,11 +221,11 @@ public class EmcWebsiteConnectionImpl implements EmcWebsiteConnection {
 		String url = "https://empireminecraft.com/login/login";
 		HttpPost request = new HttpPost(url);
 
-		List<NameValuePair> params = new ArrayList<>();
-		params.add(new BasicNameValuePair("login", username));
-		params.add(new BasicNameValuePair("password", password));
-		params.add(new BasicNameValuePair("cookie_check", "1"));
-		request.setEntity(new UrlEncodedFormEntity(params, Consts.UTF_8));
+		setPostParameters(request, //@formatter:off
+			"login", username,
+			"password", password,
+			"cookie_check", "1"
+		); //@formatter:on
 
 		HttpResponse response = client.execute(request);
 		HttpEntity entity = response.getEntity();
@@ -233,6 +233,23 @@ public class EmcWebsiteConnectionImpl implements EmcWebsiteConnection {
 
 		//client is redirected to the homepage on successful login
 		return response.getStatusLine().getStatusCode() == 303;
+	}
+
+	private static void setPostParameters(HttpPost request, String... params) {
+		if (params.length % 2 != 0) {
+			throw new IllegalArgumentException("params vararg must have an even number of elements.");
+		}
+
+		List<NameValuePair> pairs = new ArrayList<>();
+		for (int i = 0; i < params.length; i += 2) {
+			String name = params[i];
+			String value = params[i + 1];
+
+			NameValuePair pair = new BasicNameValuePair(name, value);
+			pairs.add(pair);
+		}
+
+		request.setEntity(new UrlEncodedFormEntity(pairs, Consts.UTF_8));
 	}
 
 	@Override
