@@ -9,7 +9,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
-import org.apache.commons.io.IOUtils;
 import org.apache.http.Consts;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
@@ -159,11 +158,8 @@ public class EmcWebsiteConnectionImpl implements EmcWebsiteConnection {
 		HttpGet request = new HttpGet(url);
 		HttpResponse response = client.execute(request);
 		HttpEntity entity = response.getEntity();
-		InputStream in = entity.getContent();
-		try {
+		try (InputStream in = entity.getContent()) {
 			return Jsoup.parse(in, "UTF-8", base);
-		} finally {
-			IOUtils.closeQuietly(in);
 		}
 	}
 
@@ -173,11 +169,8 @@ public class EmcWebsiteConnectionImpl implements EmcWebsiteConnection {
 		HttpGet request = new HttpGet(url);
 		HttpResponse response = client.execute(request);
 		HttpEntity entity = response.getEntity();
-		InputStream in = entity.getContent();
-		try {
+		try (InputStream in = entity.getContent()) {
 			return Jsoup.parse(in, "UTF-8", "https://empireminecraft.com");
-		} finally {
-			IOUtils.closeQuietly(in);
 		}
 	}
 
@@ -190,13 +183,10 @@ public class EmcWebsiteConnectionImpl implements EmcWebsiteConnection {
 
 		JsonElement root;
 		HttpEntity entity = response.getEntity();
-		Reader reader = new InputStreamReader(entity.getContent());
-		try {
+		try (Reader reader = new InputStreamReader(entity.getContent())) {
 			root = new JsonParser().parse(reader);
 		} catch (JsonParseException e) {
 			throw new IOException(e);
-		} finally {
-			IOUtils.closeQuietly(reader);
 		}
 
 		try {
