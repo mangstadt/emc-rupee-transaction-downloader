@@ -6,11 +6,11 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.net.ConnectException;
 import java.net.SocketTimeoutException;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Calendar;
 import java.util.Collections;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -21,7 +21,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import org.apache.commons.lang3.time.DateUtils;
 import org.apache.http.client.CookieStore;
 import org.jsoup.nodes.Document;
 
@@ -65,18 +64,17 @@ public class RupeeTransactionReader implements Closeable {
 	 * I probably could have stuck with a Set here (the hash is probably unique
 	 * enough), but I made this a Multimap to help prevent false positives from
 	 * happening (i.e. two non-duplicate transactions that have the same hash).
-	 * The key is the day that the transaction occurred on (the timestamp with
-	 * the time portion truncated), and the value is the hashes of the
-	 * transactions that occurred on that date.
+	 * The key is the day that the transaction occurred on, and the value is the
+	 * hashes of the transactions that occurred on that date.
 	 */
-	private final Multimap<Date, Integer> hashesOfReturnedTransactions = HashMultimap.create();
+	private final Multimap<LocalDate, Integer> hashesOfReturnedTransactions = HashMultimap.create();
 
 	private final PageSource pageSource;
 	private final Integer startAtPage, stopAtPage;
-	private final Date startAtDate, stopAtDate;
+	private final LocalDateTime startAtDate, stopAtDate;
 	private final int threads;
 
-	private final Date latestTransactionDate;
+	private final LocalDateTime latestTransactionDate;
 	private final AtomicInteger pageCounter;
 
 	private int nextPageToPutInQueue;
@@ -106,7 +104,7 @@ public class RupeeTransactionReader implements Closeable {
 		if (startAtDate == null) {
 			startAtPage = builder.startPage;
 		} else {
-			if (startAtDate.after(firstPage.getLastTransactionDate())) {
+			if (startAtDate.isAfter(firstPage.getLastTransactionDate())) {
 				startAtPage = 1;
 			} else {
 				startAtPage = findStartPage(startAtDate, firstPage.getTotalPages(), connection);
@@ -142,7 +140,7 @@ public class RupeeTransactionReader implements Closeable {
 	 * @return the page number
 	 * @throws IOException
 	 */
-	private int findStartPage(Date startDate, int totalPages, EmcWebsiteConnection connection) throws IOException {
+	private int findStartPage(LocalDateTime startDate, int totalPages, EmcWebsiteConnection connection) throws IOException {
 		int curPage = totalPages / 2;
 		int nextAmount = curPage / 2;
 		while (nextAmount > 0) {
@@ -150,12 +148,12 @@ public class RupeeTransactionReader implements Closeable {
 			nextAmount /= 2;
 
 			RupeeTransactionPage page = pageSource.getPage(curPage, connection);
-			if (startDate.after(page.getFirstTransactionDate())) {
+			if (startDate.isAfter(page.getFirstTransactionDate())) {
 				curPage -= amount;
 				continue;
 			}
 
-			if (startDate.before(page.getLastTransactionDate())) {
+			if (startDate.isBefore(page.getLastTransactionDate())) {
 				curPage += amount;
 				continue;
 			}
@@ -223,7 +221,7 @@ public class RupeeTransactionReader implements Closeable {
 			 * that come *before* it on the page (since transactions are listed
 			 * in descending order).
 			 */
-			if (startAtDate != null && transaction.getTs().after(startAtDate)) {
+			if (startAtDate != null && transaction.getTs().isAfter(startAtDate)) {
 				continue;
 			}
 
@@ -232,7 +230,7 @@ public class RupeeTransactionReader implements Closeable {
 			 * same as, or comes before, the stop date, then we're reached the
 			 * "end of stream". The download threads will terminate in time.
 			 */
-			if (stopAtDate != null && transaction.getTs().getTime() <= stopAtDate.getTime()) {
+			if (stopAtDate != null && transaction.getTs().compareTo(stopAtDate) <= 0) {
 				endOfStream = true;
 				return null;
 			}
@@ -245,7 +243,7 @@ public class RupeeTransactionReader implements Closeable {
 			 * transactions "down" one. This causes duplicate transactions to be
 			 * read.
 			 */
-			Date date = DateUtils.truncate(transaction.getTs(), Calendar.DATE);
+			LocalDate date = transaction.getTs().toLocalDate();
 			if (!hashesOfReturnedTransactions.put(date, transaction.hashCode())) {
 				continue;
 			}
@@ -323,12 +321,12 @@ public class RupeeTransactionReader implements Closeable {
 					 * given (in our case, if we're trying to download past the
 					 * last page).
 					 */
-					boolean lastPageReached = pageNumber > 1 && transactionPage.getFirstTransactionDate().getTime() >= latestTransactionDate.getTime();
+					boolean lastPageReached = pageNumber > 1 && transactionPage.getFirstTransactionDate().compareTo(latestTransactionDate) >= 0;
 					if (lastPageReached) {
 						break;
 					}
 
-					if (stopAtDate != null && transactionPage.getFirstTransactionDate().getTime() <= stopAtDate.getTime()) {
+					if (stopAtDate != null && transactionPage.getFirstTransactionDate().compareTo(stopAtDate) <= 0) {
 						/*
 						 * If the FIRST transaction in the list comes before the
 						 * stop date, then the entire page should be ignored (it
@@ -356,7 +354,7 @@ public class RupeeTransactionReader implements Closeable {
 						}
 					}
 
-					if (stopAtDate != null && transactionPage.getLastTransactionDate().getTime() <= stopAtDate.getTime()) {
+					if (stopAtDate != null && transactionPage.getLastTransactionDate().compareTo(stopAtDate) <= 0) {
 						/*
 						 * At this point, we know the FIRST transaction in the
 						 * list does *not* come before the stop date (see if
@@ -433,7 +431,7 @@ public class RupeeTransactionReader implements Closeable {
 		private List<RupeeTransactionScribe<?>> scribes = new ArrayList<RupeeTransactionScribe<?>>();
 		private RupeeTransactionPageScraper pageScraper;
 		private Integer startPage = 1, stopPage;
-		private Date startDate, stopDate;
+		private LocalDateTime startDate, stopDate;
 		private int threads = 4;
 
 		/**
@@ -510,7 +508,7 @@ public class RupeeTransactionReader implements Closeable {
 		 * @param date the start date
 		 * @return this
 		 */
-		public Builder start(Date date) {
+		public Builder start(LocalDateTime date) {
 			startDate = date;
 			startPage = null;
 			return this;
@@ -521,7 +519,7 @@ public class RupeeTransactionReader implements Closeable {
 		 * reader will start parsing at the very beginning.
 		 * @return the start date or null if not set
 		 */
-		public Date startDate() {
+		public LocalDateTime startDate() {
 			return startDate;
 		}
 
@@ -555,7 +553,7 @@ public class RupeeTransactionReader implements Closeable {
 		 * the end
 		 * @return this
 		 */
-		public Builder stop(Date date) {
+		public Builder stop(LocalDateTime date) {
 			stopDate = date;
 			stopPage = null;
 			return this;
@@ -567,7 +565,7 @@ public class RupeeTransactionReader implements Closeable {
 		 * @return date the stop date (exclusive) or null to keep parsing until
 		 * the end
 		 */
-		public Date stopDate() {
+		public LocalDateTime stopDate() {
 			return stopDate;
 		}
 

@@ -1,7 +1,7 @@
 package com.github.mangstadt.emc.rupees.dto;
 
+import java.time.LocalDateTime;
 import java.util.Collections;
-import java.util.Date;
 import java.util.List;
 
 /**
@@ -53,7 +53,7 @@ public class RupeeTransactionPage {
 	 * </p>
 	 * @return the transaction date
 	 */
-	public Date getFirstTransactionDate() {
+	public LocalDateTime getFirstTransactionDate() {
 		return transactions.isEmpty() ? null : transactions.get(0).getTs();
 	}
 
@@ -69,7 +69,7 @@ public class RupeeTransactionPage {
 	 * </p>
 	 * @return the transaction date
 	 */
-	public Date getLastTransactionDate() {
+	public LocalDateTime getLastTransactionDate() {
 		return transactions.isEmpty() ? null : transactions.get(transactions.size() - 1).getTs();
 	}
 }

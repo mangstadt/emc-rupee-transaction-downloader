@@ -1,11 +1,12 @@
 package com.github.mangstadt.emc.rupees;
 
-import java.text.DateFormat;
 import java.text.ParseException;
-import java.text.SimpleDateFormat;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 import java.util.logging.Level;
@@ -38,6 +39,11 @@ public class RupeeTransactionPageScraper {
 
 	private final Pattern balanceRegex = Pattern.compile("^Your balance: ([\\d,]+)$", Pattern.CASE_INSENSITIVE);
 	private final Pattern amountRegex = Pattern.compile("^(-|\\+)\\s*([\\d,]+)$", Pattern.CASE_INSENSITIVE);
+
+	/*
+	 * English month names are always used, no matter where the player lives.
+	 */
+	private final DateTimeFormatter transactionTsFormatter = DateTimeFormatter.ofPattern("MMM d, yyyy 'at' h:mm a", Locale.US);
 
 	private final List<RupeeTransactionScribe<?>> scribes = new ArrayList<RupeeTransactionScribe<?>>();
 	{
@@ -215,25 +221,17 @@ public class RupeeTransactionPageScraper {
 	 * @return the timestamp
 	 * @throws ParseException if the timestamp can't be parsed
 	 */
-	private Date parseTs(Element transactionElement) throws ParseException {
+	private LocalDateTime parseTs(Element transactionElement) throws ParseException {
 		Element tsElement = transactionElement.select("div.time abbr[data-time]").first();
 		if (tsElement != null) {
 			String dataTime = tsElement.attr("data-time");
-			long ts = Long.parseLong(dataTime) * 1000;
-			return new Date(ts);
+			long epochSeconds = Long.parseLong(dataTime);
+			return Instant.ofEpochSecond(epochSeconds).atZone(ZoneId.systemDefault()).toLocalDateTime();
 		}
 
 		tsElement = transactionElement.select("div.time span[title]").first();
 		String tsText = tsElement.attr("title");
-
-		/*
-		 * Instantiate new DateFormat object to keep this class thread-safe.
-		 * Also, note that English month names are used, no matter where the
-		 * player lives.
-		 */
-		DateFormat df = new SimpleDateFormat("MMM dd, yyyy 'at' hh:mm aa", Locale.US);
-
-		return df.parse(tsText);
+		return LocalDateTime.from(transactionTsFormatter.parse(tsText));
 	}
 
 	/**

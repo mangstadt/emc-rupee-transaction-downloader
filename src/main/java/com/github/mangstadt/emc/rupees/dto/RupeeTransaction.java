@@ -1,13 +1,13 @@
 package com.github.mangstadt.emc.rupees.dto;
 
-import java.util.Date;
+import java.time.LocalDateTime;
 
 /**
  * Represents a rupee transaction on the transaction history page.
  * @author Michael Angstadt
  */
 public class RupeeTransaction {
-	private final Date ts;
+	private final LocalDateTime ts;
 	private final String description;
 	private final int amount, balance;
 
@@ -22,7 +22,7 @@ public class RupeeTransaction {
 	 * Gets the transaction's timestamp.
 	 * @return the timestamp
 	 */
-	public Date getTs() {
+	public LocalDateTime getTs() {
 		return ts;
 	}
 
@@ -89,7 +89,7 @@ public class RupeeTransaction {
 	 * @author Michael Angstadt
 	 */
 	public static class Builder<T extends Builder<?>> {
-		private Date ts;
+		private LocalDateTime ts;
 		private String description;
 		private int amount, balance;
 
@@ -107,7 +107,7 @@ public class RupeeTransaction {
 			balance = orig.balance;
 		}
 
-		public T ts(Date ts) {
+		public T ts(LocalDateTime ts) {
 			this.ts = ts;
 			return this_;
 		}

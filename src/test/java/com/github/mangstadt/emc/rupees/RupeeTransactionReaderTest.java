@@ -13,11 +13,10 @@ import static org.mockito.Mockito.verify;
 import java.io.IOException;
 import java.net.ConnectException;
 import java.net.SocketTimeoutException;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Calendar;
 import java.util.Collections;
-import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 import java.util.logging.LogManager;
@@ -148,7 +147,7 @@ public class RupeeTransactionReaderTest {
 
 	@Test
 	public void startDate() throws IOException {
-		Date latestTransactionDate = new Date();
+		LocalDateTime latestTransactionDate = LocalDateTime.now();
 
 		//@formatter:off
 		TransactionGenerator gen = new TransactionGenerator(latestTransactionDate);
@@ -171,14 +170,11 @@ public class RupeeTransactionReaderTest {
 		}
 
 		//@formatter:off
-		Calendar cal = Calendar.getInstance();
-		cal.setTime(latestTransactionDate);
-		cal.add(Calendar.HOUR_OF_DAY, -7);
 		RupeeTransactionReader reader = new RupeeTransactionReader
 			.Builder(pageProducer)
 			.threads(2)
-			.start(cal.getTime())
-			.build();
+			.start(latestTransactionDate.minusHours(7))
+		.build();
 		//@formatter:on
 
 		assertTransactionOrder(expectedTransactions, reader);
@@ -190,7 +186,7 @@ public class RupeeTransactionReaderTest {
 
 	@Test
 	public void startDate_not_on_any_page() throws IOException {
-		Date latestTransactionDate = new Date();
+		LocalDateTime latestTransactionDate = LocalDateTime.now();
 
 		TransactionGenerator gen = new TransactionGenerator(latestTransactionDate);
 		int pageCount = 1;
@@ -205,13 +201,10 @@ public class RupeeTransactionReaderTest {
 		expectedTransactions.addAll(pages.get(1).getTransactions());
 
 		//@formatter:off
-		Calendar cal = Calendar.getInstance();
-		cal.setTime(latestTransactionDate);
-		cal.add(Calendar.HOUR_OF_DAY, -7);
 		RupeeTransactionReader reader = new RupeeTransactionReader
 			.Builder(pageProducer)
 			.threads(2)
-			.start(cal.getTime())
+			.start(latestTransactionDate.minusHours(7))
 			.build();
 		//@formatter:on
 
@@ -294,7 +287,7 @@ public class RupeeTransactionReaderTest {
 
 	@Test
 	public void stopDate() throws IOException {
-		Date latestTransactionDate = new Date();
+		LocalDateTime latestTransactionDate = LocalDateTime.now();
 
 		//@formatter:off
 		TransactionGenerator gen = new TransactionGenerator(latestTransactionDate);
@@ -310,11 +303,6 @@ public class RupeeTransactionReaderTest {
 
 		PageProducerMock pageProducer = spy(new PageProducerMock(pages));
 
-		Calendar cal = Calendar.getInstance();
-		cal.setTime(latestTransactionDate);
-		cal.add(Calendar.HOUR_OF_DAY, -7);
-		Date stopAt = cal.getTime();
-
 		List<RupeeTransaction> expectedTransactions = new ArrayList<RupeeTransaction>();
 		expectedTransactions.addAll(pages.get(0).getTransactions());
 		expectedTransactions.addAll(pages.get(1).getTransactions().subList(0, 2));
@@ -323,7 +311,7 @@ public class RupeeTransactionReaderTest {
 		RupeeTransactionReader reader = new RupeeTransactionReader
 			.Builder(pageProducer)
 			.threads(2)
-			.stop(stopAt)
+			.stop(latestTransactionDate.minusHours(7))
 			.build();
 		//@formatter:on
 
@@ -336,7 +324,7 @@ public class RupeeTransactionReaderTest {
 
 	@Test
 	public void stopDate_same_as_first_transaction_date() throws IOException {
-		Date latestTransactionDate = new Date();
+		LocalDateTime latestTransactionDate = LocalDateTime.now();
 
 		//@formatter:off
 		TransactionGenerator gen = new TransactionGenerator(latestTransactionDate);
@@ -352,15 +340,13 @@ public class RupeeTransactionReaderTest {
 
 		PageProducerMock pageProducer = spy(new PageProducerMock(pages));
 
-		Date stopAt = latestTransactionDate;
-
 		List<RupeeTransaction> expectedTransactions = Collections.emptyList();
 
 		//@formatter:off
 		RupeeTransactionReader reader = new RupeeTransactionReader
 			.Builder(pageProducer)
 			.threads(2)
-			.stop(stopAt)
+			.stop(latestTransactionDate)
 			.build();
 		//@formatter:on
 
@@ -373,7 +359,7 @@ public class RupeeTransactionReaderTest {
 
 	@Test
 	public void stopDate_after_first_transaction_date() throws IOException {
-		Date latestTransactionDate = new Date();
+		LocalDateTime latestTransactionDate = LocalDateTime.now();
 
 		//@formatter:off
 		TransactionGenerator gen = new TransactionGenerator(latestTransactionDate);
@@ -389,18 +375,13 @@ public class RupeeTransactionReaderTest {
 
 		PageProducerMock pageProducer = spy(new PageProducerMock(pages));
 
-		Calendar cal = Calendar.getInstance();
-		cal.setTime(latestTransactionDate);
-		cal.add(Calendar.HOUR, 1);
-		Date stopAt = cal.getTime();
-
 		List<RupeeTransaction> expectedTransactions = Collections.emptyList();
 
 		//@formatter:off
 		RupeeTransactionReader reader = new RupeeTransactionReader
 			.Builder(pageProducer)
 			.threads(2)
-			.stop(stopAt)
+			.stop(latestTransactionDate.plusHours(1))
 			.build();
 		//@formatter:on
 
@@ -451,7 +432,6 @@ public class RupeeTransactionReaderTest {
 
 	@Test
 	public void recoverable_ioexceptions_thrown_twice() throws Exception {
-		@SuppressWarnings("unchecked")
 		List<Class<? extends IOException>> exceptions = Arrays.asList(ConnectException.class, SocketTimeoutException.class);
 		for (Class<? extends IOException> exception : exceptions) {
 			//@formatter:off
@@ -717,14 +697,14 @@ public class RupeeTransactionReaderTest {
 	}
 
 	private static class TransactionGenerator implements Iterator<RupeeTransaction> {
-		private final Calendar calendar = Calendar.getInstance();
+		private LocalDateTime date;
 
 		public TransactionGenerator() {
-			//empty
+			this(LocalDateTime.now());
 		}
 
-		public TransactionGenerator(Date date) {
-			calendar.setTime(date);
+		public TransactionGenerator(LocalDateTime date) {
+			this.date = date;
 		}
 
 		@Override
@@ -734,15 +714,15 @@ public class RupeeTransactionReaderTest {
 
 		@Override
 		public RupeeTransaction next() {
-			Date ts = calendar.getTime();
-			calendar.add(Calendar.HOUR_OF_DAY, -1);
+			LocalDateTime ts = date;
+			date = date.minusHours(1);
 
 			//@formatter:off
 			return new RupeeTransaction.Builder<RupeeTransaction.Builder<?>>()
-			.ts(ts)
-			.amount(1)
-			.balance(1)
-			.description("Description")
+				.ts(ts)
+				.amount(1)
+				.balance(1)
+				.description("Description")
 			.build();
 			//@formatter:on
 		}

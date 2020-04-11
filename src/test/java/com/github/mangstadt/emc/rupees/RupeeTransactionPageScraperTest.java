@@ -6,9 +6,8 @@ import static org.junit.Assert.assertNull;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.text.SimpleDateFormat;
+import java.time.LocalDateTime;
 import java.util.Arrays;
-import java.util.Date;
 import java.util.Iterator;
 import java.util.logging.LogManager;
 import java.util.regex.Matcher;
@@ -49,13 +48,13 @@ public class RupeeTransactionPageScraperTest {
 		Iterator<RupeeTransaction> it = page.getTransactions().iterator();
 
 		RupeeTransaction transaction = it.next();
-		assertEquals(new Date(1435429290000L), transaction.getTs());
+		assertEquals(LocalDateTime.of(2015, 6, 27, 14, 21, 30), transaction.getTs());
 		assertEquals("Donation to Notch", transaction.getDescription());
 		assertEquals(32, transaction.getAmount());
 		assertEquals(1284678, transaction.getBalance());
 
 		ShopTransaction shopTransaction = (ShopTransaction) it.next();
-		assertEquals(new Date(1435428172000L), shopTransaction.getTs());
+		assertEquals(LocalDateTime.of(2015, 6, 27, 14, 2, 52), shopTransaction.getTs());
 		assertEquals("Player shop sold 4 Purple Dye to AnguishedCarpet", shopTransaction.getDescription());
 		assertEquals(28, shopTransaction.getAmount());
 		assertEquals(1284614, shopTransaction.getBalance());
@@ -65,7 +64,7 @@ public class RupeeTransactionPageScraperTest {
 		assertEquals("Purple Dye", shopTransaction.getItem());
 
 		PaymentTransaction paymentTransaction = (PaymentTransaction) it.next();
-		assertEquals(new Date(1435428159000L), paymentTransaction.getTs());
+		assertEquals(LocalDateTime.of(2015, 6, 27, 14, 2, 39), paymentTransaction.getTs());
 		assertEquals("Payment to AnguishedCarpet", paymentTransaction.getDescription());
 		assertEquals(-32, paymentTransaction.getAmount());
 		assertEquals(1284586, paymentTransaction.getBalance());
@@ -73,13 +72,13 @@ public class RupeeTransactionPageScraperTest {
 		assertNull(paymentTransaction.getReason());
 
 		DailySigninBonus dailySigninBonus = (DailySigninBonus) it.next();
-		assertEquals(new Date(1435427901000L), dailySigninBonus.getTs());
+		assertEquals(LocalDateTime.of(2015, 6, 27, 13, 58, 21), dailySigninBonus.getTs());
 		assertEquals("Daily sign-in bonus", dailySigninBonus.getDescription());
 		assertEquals(400, dailySigninBonus.getAmount());
 		assertEquals(1284554, dailySigninBonus.getBalance());
 
 		transaction = it.next();
-		assertEquals(new SimpleDateFormat("MM/dd/yyyy HH:mm").parse("11/22/2012 21:54"), transaction.getTs());
+		assertEquals(LocalDateTime.of(2012, 11, 22, 21, 54, 0), transaction.getTs());
 		assertEquals("Week-old transaction", transaction.getDescription());
 		assertEquals(-100, transaction.getAmount());
 		assertEquals(212990, transaction.getBalance());
@@ -100,14 +99,14 @@ public class RupeeTransactionPageScraperTest {
 		Iterator<RupeeTransaction> it = page.getTransactions().iterator();
 
 		DonationTransaction donation = (DonationTransaction) it.next();
-		assertEquals(new Date(1435429290000L), donation.getTs());
+		assertEquals(LocalDateTime.of(2015, 6, 27, 14, 21, 30), donation.getTs());
 		assertEquals("Donation to Notch", donation.getDescription());
 		assertEquals(32, donation.getAmount());
 		assertEquals(1284678, donation.getBalance());
 		assertEquals("Notch", donation.player);
 
 		ShopTransaction shopTransaction = (ShopTransaction) it.next();
-		assertEquals(new Date(1435428172000L), shopTransaction.getTs());
+		assertEquals(LocalDateTime.of(2015, 6, 27, 14, 2, 52), shopTransaction.getTs());
 		assertEquals("Player shop sold 4 Purple Dye to AnguishedCarpet", shopTransaction.getDescription());
 		assertEquals(28, shopTransaction.getAmount());
 		assertEquals(1284614, shopTransaction.getBalance());
@@ -117,7 +116,7 @@ public class RupeeTransactionPageScraperTest {
 		assertEquals("Purple Dye", shopTransaction.getItem());
 
 		PaymentTransaction paymentTransaction = (PaymentTransaction) it.next();
-		assertEquals(new Date(1435428159000L), paymentTransaction.getTs());
+		assertEquals(LocalDateTime.of(2015, 6, 27, 14, 2, 39), paymentTransaction.getTs());
 		assertEquals("Payment to AnguishedCarpet", paymentTransaction.getDescription());
 		assertEquals(-32, paymentTransaction.getAmount());
 		assertEquals(1284586, paymentTransaction.getBalance());
@@ -125,13 +124,13 @@ public class RupeeTransactionPageScraperTest {
 		assertNull(paymentTransaction.getReason());
 
 		DailySigninBonus dailySigninBonus = (DailySigninBonus) it.next();
-		assertEquals(new Date(1435427901000L), dailySigninBonus.getTs());
+		assertEquals(LocalDateTime.of(2015, 6, 27, 13, 58, 21), dailySigninBonus.getTs());
 		assertEquals("Daily sign-in bonus", dailySigninBonus.getDescription());
 		assertEquals(400, dailySigninBonus.getAmount());
 		assertEquals(1284554, dailySigninBonus.getBalance());
 
 		RupeeTransaction transaction = it.next();
-		assertEquals(new SimpleDateFormat("MM/dd/yyyy HH:mm").parse("11/22/2012 21:54"), transaction.getTs());
+		assertEquals(LocalDateTime.of(2012, 11, 22, 21, 54, 0), transaction.getTs());
 		assertEquals("Week-old transaction", transaction.getDescription());
 		assertEquals(-100, transaction.getAmount());
 		assertEquals(212990, transaction.getBalance());
@@ -152,13 +151,13 @@ public class RupeeTransactionPageScraperTest {
 		Iterator<RupeeTransaction> it = page.getTransactions().iterator();
 
 		RupeeTransaction transaction = it.next();
-		assertEquals(new Date(1435429290000L), transaction.getTs());
+		assertEquals(LocalDateTime.of(2015, 6, 27, 14, 21, 30), transaction.getTs());
 		assertEquals("Donation to Notch", transaction.getDescription());
 		assertEquals(32, transaction.getAmount());
 		assertEquals(1284678, transaction.getBalance());
 
 		ShopTransaction shopTransaction = (ShopTransaction) it.next();
-		assertEquals(new Date(1435428172000L), shopTransaction.getTs());
+		assertEquals(LocalDateTime.of(2015, 6, 27, 14, 02, 52), shopTransaction.getTs());
 		assertEquals("Player shop sold 4 Purple Dye to AnguishedCarpet", shopTransaction.getDescription());
 		assertEquals(28, shopTransaction.getAmount());
 		assertEquals(1284614, shopTransaction.getBalance());
@@ -168,7 +167,7 @@ public class RupeeTransactionPageScraperTest {
 		assertEquals("Purple Dye", shopTransaction.getItem());
 
 		PaymentTransaction paymentTransaction = (PaymentTransaction) it.next();
-		assertEquals(new Date(1435428159000L), paymentTransaction.getTs());
+		assertEquals(LocalDateTime.of(2015, 6, 27, 14, 02, 39), paymentTransaction.getTs());
 		assertEquals("Payment to AnguishedCarpet", paymentTransaction.getDescription());
 		assertEquals(-32, paymentTransaction.getAmount());
 		assertEquals(1284586, paymentTransaction.getBalance());
@@ -176,13 +175,13 @@ public class RupeeTransactionPageScraperTest {
 		assertNull(paymentTransaction.getReason());
 
 		DailySigninBonus dailySigninBonus = (DailySigninBonus) it.next();
-		assertEquals(new Date(1435427901000L), dailySigninBonus.getTs());
+		assertEquals(LocalDateTime.of(2015, 6, 27, 13, 58, 21), dailySigninBonus.getTs());
 		assertEquals("Daily sign-in bonus", dailySigninBonus.getDescription());
 		assertEquals(400, dailySigninBonus.getAmount());
 		assertEquals(1284554, dailySigninBonus.getBalance());
 
 		transaction = it.next();
-		assertEquals(new SimpleDateFormat("MM/dd/yyyy HH:mm").parse("11/22/2012 21:54"), transaction.getTs());
+		assertEquals(LocalDateTime.of(2012, 11, 22, 21, 54, 0), transaction.getTs());
 		assertEquals("Week-old transaction", transaction.getDescription());
 		assertEquals(-100, transaction.getAmount());
 		assertEquals(212990, transaction.getBalance());
