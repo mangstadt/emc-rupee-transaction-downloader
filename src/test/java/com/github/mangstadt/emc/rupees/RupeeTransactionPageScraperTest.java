@@ -13,7 +13,6 @@ import java.util.logging.LogManager;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.apache.commons.io.IOUtils;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.junit.BeforeClass;
@@ -220,11 +219,8 @@ public class RupeeTransactionPageScraperTest {
 	}
 
 	private Document load(String file) throws IOException {
-		InputStream in = getClass().getResourceAsStream(file);
-		try {
+		try (InputStream in = getClass().getResourceAsStream(file)) {
 			return Jsoup.parse(in, "UTF-8", "");
-		} finally {
-			IOUtils.closeQuietly(in);
 		}
 	}
 
