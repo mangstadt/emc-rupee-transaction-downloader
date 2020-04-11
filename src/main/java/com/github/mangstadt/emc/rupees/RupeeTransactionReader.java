@@ -1,7 +1,5 @@
 package com.github.mangstadt.emc.rupees;
 
-import static org.apache.commons.io.IOUtils.closeQuietly;
-
 import java.io.Closeable;
 import java.io.IOException;
 import java.net.ConnectException;
@@ -383,7 +381,12 @@ public class RupeeTransactionReader implements Closeable {
 			} finally {
 				synchronized (RupeeTransactionReader.this) {
 					deadThreads++;
-					closeQuietly(connection);
+
+					try {
+						connection.close();
+					} catch (IOException ignore) {
+					}
+
 					if (deadThreads == threads) {
 						//this is the last thread to terminate
 						queue.add(noMoreElements);
