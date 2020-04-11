@@ -1,6 +1,6 @@
 package com.github.mangstadt.emc.net;
 
-import org.apache.commons.lang3.StringUtils;
+import com.google.common.base.Strings;
 
 /**
  * Thrown when the EMC website rejects your login credentials.
@@ -9,6 +9,6 @@ import org.apache.commons.lang3.StringUtils;
 @SuppressWarnings("serial")
 public class InvalidCredentialsException extends RuntimeException {
 	public InvalidCredentialsException(String username, String password) {
-		super("Invalid credentials: (username = " + username + "; password = " + StringUtils.repeat('*', password.length()));
+		super("Invalid credentials: (username = " + username + "; password = " + Strings.repeat("*", password.length()));
 	}
 }
