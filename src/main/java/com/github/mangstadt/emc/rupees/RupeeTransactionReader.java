@@ -449,7 +449,7 @@ public class RupeeTransactionReader implements Closeable {
 		 * Use a previously authenticated session.
 		 * @param cookieStore the session's cookies
 		 */
-		public Builder(final CookieStore cookieStore) {
+		public Builder(CookieStore cookieStore) {
 			pageSource = new PageSourceImpl() {
 				@Override
 				public EmcWebsiteConnection createSession() throws IOException {
@@ -463,7 +463,7 @@ public class RupeeTransactionReader implements Closeable {
 		 * @param username the player's username
 		 * @param password the player's password
 		 */
-		public Builder(final String username, final String password) {
+		public Builder(String username, String password) {
 			pageSource = new PageSourceImpl() {
 				@Override
 				public EmcWebsiteConnection createSession() throws IOException {
