@@ -295,9 +295,7 @@ public class RupeeTransactionReader implements Closeable {
 					RupeeTransactionPage transactionPage = null;
 					try {
 						transactionPage = pageSource.getPage(pageNumber, connection);
-					} catch (ConnectException e) {
-						transactionPage = reconnectAndRedownload(pageNumber, e);
-					} catch (SocketTimeoutException e) {
+					} catch (ConnectException | SocketTimeoutException e) {
 						transactionPage = reconnectAndRedownload(pageNumber, e);
 					}
 
