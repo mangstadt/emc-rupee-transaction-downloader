@@ -367,13 +367,13 @@ public class RupeeTransactionReader implements Closeable {
 						break;
 					}
 				}
-			} catch (Throwable t) {
+			} catch (Exception e) {
 				synchronized (RupeeTransactionReader.this) {
 					if (cancel) {
 						return;
 					}
 
-					thrown = new IOException("A problem occurred downloading page " + pageNumber + ".", t);
+					thrown = new IOException("A problem occurred downloading page " + pageNumber + ".", e);
 					cancel = true;
 				}
 			} finally {
@@ -410,7 +410,7 @@ public class RupeeTransactionReader implements Closeable {
 		 * @return the re-downloaded transaction page
 		 * @throws IOException if there's still a problem downloading the page
 		 */
-		private RupeeTransactionPage reconnectAndRedownload(int pageNumber, Throwable thrown) throws IOException {
+		private RupeeTransactionPage reconnectAndRedownload(int pageNumber, Exception thrown) throws IOException {
 			logger.log(Level.WARNING, "A connection error occurred while downloading transactions.  Re-creating the connection.", thrown);
 			connection = pageSource.recreateConnection(connection);
 			return pageSource.getPage(pageNumber, connection);
