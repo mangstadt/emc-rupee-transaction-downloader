@@ -17,6 +17,7 @@ import org.apache.http.client.CookieStore;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
+import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.config.SocketConfig;
@@ -25,7 +26,6 @@ import org.apache.http.impl.client.BasicCookieStore;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.message.BasicNameValuePair;
-import org.apache.http.util.EntityUtils;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 
@@ -83,21 +83,36 @@ public class EmcWebsiteConnectionImpl implements EmcWebsiteConnection {
 	 * @param username the user's username
 	 * @param password the user's password
 	 * @throws InvalidCredentialsException if the username/password is incorrect
-	 * @throws IOException
+	 * @throws TwoFactorAuthException if a two-factor authentication code is
+	 * required
+	 * @throws IOException if there's a problem contacting the EMC website
 	 */
 	public EmcWebsiteConnectionImpl(String username, String password) throws IOException {
-		this();
-
-		//load the home page in order to get the initial session cookie
-		loadHomePage();
-
-		//log the user in
-		if (!login(username, password)) {
-			throw new InvalidCredentialsException(username, password);
-		}
+		this(username, password, null);
 	}
 
-	private CloseableHttpClient createClient() {
+	/**
+	 * Creates an authenticated connection.
+	 * @param username the user's username
+	 * @param password the user's password
+	 * @param twoFactorAuthCode the two factor authentication code (required if
+	 * the user has two factor authentication enabled)
+	 * @throws InvalidCredentialsException if the username/password is incorrect
+	 * @throws TwoFactorAuthException if the two-factor authentication code is
+	 * invalid
+	 * @throws IOException if there's a problem contacting the EMC website
+	 */
+	public EmcWebsiteConnectionImpl(String username, String password, String twoFactorAuthCode) throws IOException {
+		this();
+
+		//log the user in
+		login(username, password, twoFactorAuthCode);
+	}
+
+	/**
+	 * This method is package-private so it can be overridden in unit-tests.
+	 */
+	CloseableHttpClient createClient() {
 		int connectionTimeout = (int) TimeUnit.MINUTES.toMillis(10);
 
 		//@formatter:off
@@ -209,30 +224,58 @@ public class EmcWebsiteConnectionImpl implements EmcWebsiteConnection {
 		}
 	}
 
-	private void loadHomePage() throws IOException {
-		String url = "https://empireminecraft.com";
-		HttpGet request = new HttpGet(url);
-		HttpResponse response = client.execute(request);
-		HttpEntity entity = response.getEntity();
-		EntityUtils.consume(entity);
-	}
-
-	private boolean login(String username, String password) throws IOException {
+	/**
+	 * Logs the user into the website.
+	 * @param username the username
+	 * @param password the password
+	 * @param twoFactorAuthCode the two-factor authentication code, or null if
+	 * the user does not have two-factor authentication enabled
+	 * @throws InvalidCredentialsException if the username/password is incorrect
+	 * @throws TwoFactorAuthException if a code is required or if the provided
+	 * code is invalid
+	 * @throws IOException
+	 */
+	private void login(String username, String password, String twoFactorAuthCode) throws IOException {
 		String url = "https://empireminecraft.com/login/login";
 		HttpPost request = new HttpPost(url);
 
-		setPostParameters(request, //@formatter:off
-			"login", username,
-			"password", password,
-			"cookie_check", "1"
-		); //@formatter:on
+		if (twoFactorAuthCode == null) {
+			setPostParameters(request, //@formatter:off
+				"login", username,
+				"password", password
+			); //@formatter:on
+		} else {
+			setPostParameters(request, //@formatter:off
+				"fh2fa-login", username,
+				"fh2fa-password", password,
+				"key[GoogleAuthenticator]", twoFactorAuthCode
+			); //@formatter:on
+		}
 
-		HttpResponse response = client.execute(request);
-		HttpEntity entity = response.getEntity();
-		EntityUtils.consume(entity);
+		Document responseBody;
+		try (CloseableHttpResponse response = client.execute(request)) {
+			//client is redirected to the homepage on successful login
+			if (response.getStatusLine().getStatusCode() == 303) {
+				return;
+			}
 
-		//client is redirected to the homepage on successful login
-		return response.getStatusLine().getStatusCode() == 303;
+			try (InputStream in = response.getEntity().getContent()) {
+				responseBody = Jsoup.parse(in, "UTF-8", url);
+			}
+		}
+
+		boolean twoFactorAuthCodeRequired = (responseBody.getElementById("key-GoogleAuthenticator") != null);
+		if (twoFactorAuthCodeRequired) {
+			throw TwoFactorAuthException.codeRequired();
+		}
+
+		boolean twoFactorAuthCodeInvalid = !responseBody.select("span[class=errors]:contains(two-factor authentication)").isEmpty();
+		if (twoFactorAuthCodeInvalid) {
+			throw TwoFactorAuthException.codeIsInvalid(twoFactorAuthCode);
+		}
+
+		throw new InvalidCredentialsException(username, password);
+
 	}
 
 	private static void setPostParameters(HttpPost request, String... params) {

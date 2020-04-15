@@ -24,7 +24,9 @@ import org.jsoup.nodes.Document;
 
 import com.github.mangstadt.emc.net.EmcWebsiteConnection;
 import com.github.mangstadt.emc.net.EmcWebsiteConnectionImpl;
+import com.github.mangstadt.emc.net.InvalidCredentialsException;
 import com.github.mangstadt.emc.net.InvalidSessionException;
+import com.github.mangstadt.emc.net.TwoFactorAuthException;
 import com.github.mangstadt.emc.rupees.dto.RupeeTransaction;
 import com.github.mangstadt.emc.rupees.dto.RupeeTransactionPage;
 import com.github.mangstadt.emc.rupees.scribe.RupeeTransactionScribe;
@@ -82,7 +84,7 @@ public class RupeeTransactionReader implements Closeable {
 	private boolean cancel = false, endOfStream = false;
 	private Integer rupeeBalance;
 
-	private RupeeTransactionReader(Builder builder) throws IOException {
+	private RupeeTransactionReader(Builder builder) throws InvalidCredentialsException, TwoFactorAuthException, IOException {
 		pageSource = builder.pageSource;
 		threads = builder.threads;
 		stopAtPage = builder.stopPage;
@@ -473,6 +475,23 @@ public class RupeeTransactionReader implements Closeable {
 		}
 
 		/**
+		 * Authenticate using the player's username, password, and two-factor
+		 * authentication code.
+		 * @param username the player's username
+		 * @param password the player's password
+		 * @param twoFactorAuthCode the two-factor authentication code (required
+		 * if the user has two factor authentication enabled)
+		 */
+		public Builder(String username, String password, String twoFactorAuthCode) {
+			pageSource = new PageSourceImpl() {
+				@Override
+				public EmcWebsiteConnection createSession() throws IOException {
+					return new EmcWebsiteConnectionImpl(username, password, twoFactorAuthCode);
+				}
+			};
+		}
+
+		/**
 		 * Adds one or more custom transaction scribes to the reader.
 		 * @param scribes the scribes to add
 		 * @return this
@@ -593,8 +612,11 @@ public class RupeeTransactionReader implements Closeable {
 		/**
 		 * Constructs the {@link RupeeTransactionReader} object.
 		 * @return the object
-		 * @throws IOException if there's a problem initializing the connection
-		 * to the EMC website
+		 * @throws InvalidCredentialsException if the username/password is
+		 * incorrect
+		 * @throws TwoFactorAuthException if a two-factor authentication code is
+		 * required or if the provided code is invalid
+		 * @throws IOException if there's a problem contacting the EMC website
 		 */
 		public RupeeTransactionReader build() throws IOException {
 			if (threads <= 0) {
@@ -615,11 +637,6 @@ public class RupeeTransactionReader implements Closeable {
 			public RupeeTransactionPage getPage(int pageNumber, EmcWebsiteConnection connection) throws IOException {
 				Document document = connection.getRupeeTransactionPage(pageNumber);
 				return pageScraper.scrape(document);
-			}
-
-			@Override
-			public EmcWebsiteConnection recreateConnection(EmcWebsiteConnection connection) throws IOException {
-				return new EmcWebsiteConnectionImpl(connection.getCookieStore());
 			}
 		}
 	}
@@ -645,13 +662,19 @@ public class RupeeTransactionReader implements Closeable {
 		 * @return the new connection
 		 * @throws IOException if there's a problem recreating the connection
 		 */
-		EmcWebsiteConnection recreateConnection(EmcWebsiteConnection connection) throws IOException;
+		default EmcWebsiteConnection recreateConnection(EmcWebsiteConnection connection) throws IOException {
+			return new EmcWebsiteConnectionImpl(connection.getCookieStore());
+		}
 
 		/**
 		 * Creates a new, authenticated session on the EMC website.
 		 * @return the connection to the session
-		 * @throws IOException if there's a problem creating the connection
+		 * @throws InvalidCredentialsException if the username/password is
+		 * incorrect
+		 * @throws TwoFactorAuthException if a two-factor authentication code is
+		 * required or if the provided code is invalid
+		 * @throws IOException if there's a problem contacting the EMC website
 		 */
-		EmcWebsiteConnection createSession() throws IOException;
+		EmcWebsiteConnection createSession() throws InvalidCredentialsException, TwoFactorAuthException, IOException;
 	}
 }
