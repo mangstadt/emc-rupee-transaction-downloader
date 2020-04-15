@@ -11,7 +11,6 @@ import java.util.concurrent.TimeUnit;
 
 import org.apache.http.Consts;
 import org.apache.http.HttpEntity;
-import org.apache.http.HttpResponse;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.CookieStore;
 import org.apache.http.client.HttpClient;
@@ -171,10 +170,11 @@ public class EmcWebsiteConnectionImpl implements EmcWebsiteConnection {
 		String url = base + "?page=" + pageNumber;
 
 		HttpGet request = new HttpGet(url);
-		HttpResponse response = client.execute(request);
-		HttpEntity entity = response.getEntity();
-		try (InputStream in = entity.getContent()) {
-			return Jsoup.parse(in, "UTF-8", base);
+		try (CloseableHttpResponse response = client.execute(request)) {
+			HttpEntity entity = response.getEntity();
+			try (InputStream in = entity.getContent()) {
+				return Jsoup.parse(in, "UTF-8", base);
+			}
 		}
 	}
 
@@ -182,10 +182,11 @@ public class EmcWebsiteConnectionImpl implements EmcWebsiteConnection {
 	public Document getProfilePage(String playerName) throws IOException {
 		String url = "https://u.emc.gs/" + UrlEscapers.urlPathSegmentEscaper().escape(playerName);
 		HttpGet request = new HttpGet(url);
-		HttpResponse response = client.execute(request);
-		HttpEntity entity = response.getEntity();
-		try (InputStream in = entity.getContent()) {
-			return Jsoup.parse(in, "UTF-8", "https://empireminecraft.com");
+		try (CloseableHttpResponse response = client.execute(request)) {
+			HttpEntity entity = response.getEntity();
+			try (InputStream in = entity.getContent()) {
+				return Jsoup.parse(in, "UTF-8", "https://empireminecraft.com");
+			}
 		}
 	}
 
@@ -194,14 +195,15 @@ public class EmcWebsiteConnectionImpl implements EmcWebsiteConnection {
 		Integer serverNumber = serverNumbers.get(server);
 		String url = "https://empireminecraft.com/api/server-online-" + serverNumber + ".json";
 		HttpGet request = new HttpGet(url);
-		HttpResponse response = client.execute(request);
 
 		JsonElement root;
-		HttpEntity entity = response.getEntity();
-		try (Reader reader = new InputStreamReader(entity.getContent())) {
-			root = new JsonParser().parse(reader);
-		} catch (JsonParseException e) {
-			throw new IOException(e);
+		try (CloseableHttpResponse response = client.execute(request)) {
+			HttpEntity entity = response.getEntity();
+			try (Reader reader = new InputStreamReader(entity.getContent())) {
+				root = new JsonParser().parse(reader);
+			} catch (JsonParseException e) {
+				throw new IOException(e);
+			}
 		}
 
 		try {
