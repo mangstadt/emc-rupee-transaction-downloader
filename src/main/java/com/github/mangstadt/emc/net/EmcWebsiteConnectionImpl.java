@@ -236,7 +236,7 @@ public class EmcWebsiteConnectionImpl implements EmcWebsiteConnection {
 	 * @throws InvalidCredentialsException if the username/password is incorrect
 	 * @throws TwoFactorAuthException if a code is required or if the provided
 	 * code is invalid
-	 * @throws IOException
+	 * @throws IOException if there's a problem contacting the EMC website
 	 */
 	private void login(String username, String password, String twoFactorAuthCode) throws IOException {
 		String url = "https://empireminecraft.com/login/login";
@@ -300,7 +300,6 @@ public class EmcWebsiteConnectionImpl implements EmcWebsiteConnection {
 
 	@Override
 	public void close() throws IOException {
-		//TODO logout in order to invalidate the token
 		client.close();
 	}
 }
