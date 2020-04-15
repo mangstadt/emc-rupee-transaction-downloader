@@ -8,6 +8,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 import org.apache.http.Consts;
 import org.apache.http.HttpEntity;
@@ -32,7 +34,6 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.net.UrlEscapers;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
 import com.google.gson.JsonParser;
 
@@ -208,14 +209,14 @@ public class EmcWebsiteConnectionImpl implements EmcWebsiteConnection {
 
 		try {
 			JsonArray array = root.getAsJsonArray();
-			List<String> players = new ArrayList<>(array.size());
-			for (JsonElement element : array) {
-				JsonObject player = element.getAsJsonObject();
-				JsonElement name = player.get("name");
-				if (name != null) {
-					players.add(name.getAsString());
-				}
-			}
+
+			List<String> players = StreamSupport.stream(array.spliterator(), false) //@formatter:off
+				.map(element -> element.getAsJsonObject())
+				.map(player -> player.get("name"))
+				.filter(name -> name != null)
+				.map(name -> name.getAsString())
+			.collect(Collectors.toList()); //@formatter:on
+
 			return players;
 		} catch (IllegalStateException e) {
 			/*
