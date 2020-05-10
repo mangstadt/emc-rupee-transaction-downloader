@@ -77,8 +77,26 @@ public class RupeeTransactionPageScraperTest {
 		assertEquals(1284554, dailySigninBonus.getBalance());
 
 		transaction = it.next();
-		assertEquals(LocalDateTime.of(2012, 11, 22, 21, 54, 0), transaction.getTs());
-		assertEquals("Week-old transaction", transaction.getDescription());
+		assertEquals(LocalDateTime.of(2012, 11, 22, 9, 55, 0), transaction.getTs());
+		assertEquals("Week-old transaction, 24-hour time, leading zero", transaction.getDescription());
+		assertEquals(-100, transaction.getAmount());
+		assertEquals(212990, transaction.getBalance());
+
+		transaction = it.next();
+		assertEquals(LocalDateTime.of(2012, 11, 22, 9, 55, 0), transaction.getTs());
+		assertEquals("Week-old transaction, 24-hour time, no leading zero", transaction.getDescription());
+		assertEquals(-100, transaction.getAmount());
+		assertEquals(212990, transaction.getBalance());
+
+		transaction = it.next();
+		assertEquals(LocalDateTime.of(2012, 11, 22, 21, 55, 0), transaction.getTs());
+		assertEquals("Week-old transaction, 24-hour time, evening", transaction.getDescription());
+		assertEquals(-100, transaction.getAmount());
+		assertEquals(212990, transaction.getBalance());
+
+		transaction = it.next();
+		assertEquals(LocalDateTime.of(2012, 11, 22, 21, 56, 0), transaction.getTs());
+		assertEquals("Week-old transaction, 12-hour time", transaction.getDescription());
 		assertEquals(-100, transaction.getAmount());
 		assertEquals(212990, transaction.getBalance());
 
@@ -129,8 +147,26 @@ public class RupeeTransactionPageScraperTest {
 		assertEquals(1284554, dailySigninBonus.getBalance());
 
 		RupeeTransaction transaction = it.next();
-		assertEquals(LocalDateTime.of(2012, 11, 22, 21, 54, 0), transaction.getTs());
-		assertEquals("Week-old transaction", transaction.getDescription());
+		assertEquals(LocalDateTime.of(2012, 11, 22, 9, 55, 0), transaction.getTs());
+		assertEquals("Week-old transaction, 24-hour time, leading zero", transaction.getDescription());
+		assertEquals(-100, transaction.getAmount());
+		assertEquals(212990, transaction.getBalance());
+
+		transaction = it.next();
+		assertEquals(LocalDateTime.of(2012, 11, 22, 9, 55, 0), transaction.getTs());
+		assertEquals("Week-old transaction, 24-hour time, no leading zero", transaction.getDescription());
+		assertEquals(-100, transaction.getAmount());
+		assertEquals(212990, transaction.getBalance());
+
+		transaction = it.next();
+		assertEquals(LocalDateTime.of(2012, 11, 22, 21, 55, 0), transaction.getTs());
+		assertEquals("Week-old transaction, 24-hour time, evening", transaction.getDescription());
+		assertEquals(-100, transaction.getAmount());
+		assertEquals(212990, transaction.getBalance());
+
+		transaction = it.next();
+		assertEquals(LocalDateTime.of(2012, 11, 22, 21, 56, 0), transaction.getTs());
+		assertEquals("Week-old transaction, 12-hour time", transaction.getDescription());
 		assertEquals(-100, transaction.getAmount());
 		assertEquals(212990, transaction.getBalance());
 
@@ -180,8 +216,26 @@ public class RupeeTransactionPageScraperTest {
 		assertEquals(1284554, dailySigninBonus.getBalance());
 
 		transaction = it.next();
-		assertEquals(LocalDateTime.of(2012, 11, 22, 21, 54, 0), transaction.getTs());
-		assertEquals("Week-old transaction", transaction.getDescription());
+		assertEquals(LocalDateTime.of(2012, 11, 22, 9, 55, 0), transaction.getTs());
+		assertEquals("Week-old transaction, 24-hour time, leading zero", transaction.getDescription());
+		assertEquals(-100, transaction.getAmount());
+		assertEquals(212990, transaction.getBalance());
+
+		transaction = it.next();
+		assertEquals(LocalDateTime.of(2012, 11, 22, 9, 55, 0), transaction.getTs());
+		assertEquals("Week-old transaction, 24-hour time, no leading zero", transaction.getDescription());
+		assertEquals(-100, transaction.getAmount());
+		assertEquals(212990, transaction.getBalance());
+
+		transaction = it.next();
+		assertEquals(LocalDateTime.of(2012, 11, 22, 21, 55, 0), transaction.getTs());
+		assertEquals("Week-old transaction, 24-hour time, evening", transaction.getDescription());
+		assertEquals(-100, transaction.getAmount());
+		assertEquals(212990, transaction.getBalance());
+
+		transaction = it.next();
+		assertEquals(LocalDateTime.of(2012, 11, 22, 21, 56, 0), transaction.getTs());
+		assertEquals("Week-old transaction, 12-hour time", transaction.getDescription());
 		assertEquals(-100, transaction.getAmount());
 		assertEquals(212990, transaction.getBalance());
 

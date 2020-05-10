@@ -386,11 +386,41 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
 						
 						<div class="listBlock balance">1,284,554</div>
 					</li>
-				
-					<!-- week-old timestamp format -->
+					
+					<!-- week-old timestamp format (24-hour time, leading zero) -->
 					<li class="sectionItem">
-						<div class="listBlock time"><span class="DateTime" title="Nov 22, 2012 at 9:54 PM">Nov 22, 2012</span></div>
-						<div class="listBlock description">Week-old transaction</div>
+						<div class="listBlock time"><span class="DateTime" title="Nov 22, 2012 at 09:55">Nov 22, 2012</span></div>
+						<div class="listBlock description">Week-old transaction, 24-hour time, leading zero</div>
+						
+							<div class="listBlock amount negative">- 100</div>
+						
+						<div class="listBlock balance">212,990</div>
+					</li>
+					
+					<!-- week-old timestamp format (24-hour time, no leading zero) -->
+					<li class="sectionItem">
+						<div class="listBlock time"><span class="DateTime" title="Nov 22, 2012 at 9:55">Nov 22, 2012</span></div>
+						<div class="listBlock description">Week-old transaction, 24-hour time, no leading zero</div>
+						
+							<div class="listBlock amount negative">- 100</div>
+						
+						<div class="listBlock balance">212,990</div>
+					</li>
+					
+					<!-- week-old timestamp format (24-hour time), evening -->
+					<li class="sectionItem">
+						<div class="listBlock time"><span class="DateTime" title="Nov 22, 2012 at 21:55">Nov 22, 2012</span></div>
+						<div class="listBlock description">Week-old transaction, 24-hour time, evening</div>
+						
+							<div class="listBlock amount negative">- 100</div>
+						
+						<div class="listBlock balance">212,990</div>
+					</li>
+					
+					<!-- week-old timestamp format (12-hour time) -->
+					<li class="sectionItem">
+						<div class="listBlock time"><span class="DateTime" title="Nov 22, 2012 at 9:56 PM">Nov 22, 2012</span></div>
+						<div class="listBlock description">Week-old transaction, 12-hour time</div>
 						
 							<div class="listBlock amount negative">- 100</div>
 						

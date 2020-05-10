@@ -1,10 +1,10 @@
 package com.github.mangstadt.emc.rupees;
 
-import java.text.ParseException;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -43,7 +43,8 @@ public class RupeeTransactionPageScraper {
 	/*
 	 * English month names are always used, no matter where the player lives.
 	 */
-	private final DateTimeFormatter transactionTsFormatter = DateTimeFormatter.ofPattern("MMM d, yyyy 'at' h:mm a", Locale.US);
+	private final DateTimeFormatter transactionTsFormatter12Hour = DateTimeFormatter.ofPattern("MMM d, yyyy 'at' h:mm a", Locale.US);
+	private final DateTimeFormatter transactionTsFormatter24Hour = DateTimeFormatter.ofPattern("MMM d, yyyy 'at' H:mm", Locale.US);
 
 	private final List<RupeeTransactionScribe<?>> scribes = new ArrayList<>();
 	{
@@ -219,9 +220,9 @@ public class RupeeTransactionPageScraper {
 	 * Parses a transaction's timestamp.
 	 * @param transactionElement the transaction HTML element
 	 * @return the timestamp
-	 * @throws ParseException if the timestamp can't be parsed
+	 * @throws DateTimeParseException if the timestamp can't be parsed
 	 */
-	private LocalDateTime parseTs(Element transactionElement) throws ParseException {
+	private LocalDateTime parseTs(Element transactionElement) throws DateTimeParseException {
 		Element tsElement = transactionElement.select("div.time abbr[data-time]").first();
 		if (tsElement != null) {
 			String dataTime = tsElement.attr("data-time");
@@ -231,7 +232,16 @@ public class RupeeTransactionPageScraper {
 
 		tsElement = transactionElement.select("div.time span[title]").first();
 		String tsText = tsElement.attr("title");
-		return LocalDateTime.from(transactionTsFormatter.parse(tsText));
+
+		/*
+		 * Timestamp may be in 12-hour or 24-hour time, depending on the
+		 * date/time settings in the user's EMC account.
+		 */
+		try {
+			return LocalDateTime.from(transactionTsFormatter12Hour.parse(tsText));
+		} catch (DateTimeParseException e) {
+			return LocalDateTime.from(transactionTsFormatter24Hour.parse(tsText));
+		}
 	}
 
 	/**
