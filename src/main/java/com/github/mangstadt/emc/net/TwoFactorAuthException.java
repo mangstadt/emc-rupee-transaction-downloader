@@ -5,7 +5,6 @@ package com.github.mangstadt.emc.net;
  * provided, or if the provided code is invalid.
  * @author Michael Angstadt
  */
-@SuppressWarnings("serial")
 public class TwoFactorAuthException extends RuntimeException {
 	public TwoFactorAuthException(String message) {
 		super(message);

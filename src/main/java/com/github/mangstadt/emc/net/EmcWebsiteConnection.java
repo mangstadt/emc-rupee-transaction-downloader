@@ -17,7 +17,7 @@ public interface EmcWebsiteConnection extends Closeable {
 	 * Downloads a rupee history transaction page.
 	 * @param pageNumber the page number
 	 * @return the HTML page
-	 * @throws IOException
+	 * @throws IOException if there is a problem downloading the page
 	 */
 	Document getRupeeTransactionPage(int pageNumber) throws IOException;
 
@@ -25,15 +25,15 @@ public interface EmcWebsiteConnection extends Closeable {
 	 * Downloads a player's profile page.
 	 * @param playerName the player name
 	 * @return the HTML page
-	 * @throws IOException
+	 * @throws IOException if there is a problem downloading the page
 	 */
 	Document getProfilePage(String playerName) throws IOException;
 
 	/**
 	 * Gets the list of players that are logged into a server.
-	 * @param the EMC server
+	 * @param server the EMC server
 	 * @return the players
-	 * @throws IOException
+	 * @throws IOException if there is a problem downloading the information
 	 */
 	List<String> getOnlinePlayers(EmcServer server) throws IOException;
 

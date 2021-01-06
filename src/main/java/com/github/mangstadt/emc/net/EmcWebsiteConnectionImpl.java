@@ -7,6 +7,7 @@ import java.io.Reader;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
@@ -22,7 +23,6 @@ import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.config.SocketConfig;
-import org.apache.http.cookie.Cookie;
 import org.apache.http.impl.client.BasicCookieStore;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
@@ -132,9 +132,7 @@ public class EmcWebsiteConnectionImpl implements EmcWebsiteConnection {
 
 	private static CookieStore copyOf(CookieStore original) {
 		CookieStore copy = new BasicCookieStore();
-		for (Cookie cookie : original.getCookies()) {
-			copy.addCookie(cookie);
-		}
+		original.getCookies().forEach(copy::addCookie);
 		return copy;
 	}
 
@@ -210,14 +208,12 @@ public class EmcWebsiteConnectionImpl implements EmcWebsiteConnection {
 		try {
 			JsonArray array = root.getAsJsonArray();
 
-			List<String> players = StreamSupport.stream(array.spliterator(), false) //@formatter:off
-				.map(element -> element.getAsJsonObject())
+			return StreamSupport.stream(array.spliterator(), false) //@formatter:off
+				.map(JsonElement::getAsJsonObject)
 				.map(player -> player.get("name"))
-				.filter(name -> name != null)
-				.map(name -> name.getAsString())
+				.filter(Objects::nonNull)
+				.map(JsonElement::getAsString)
 			.collect(Collectors.toList()); //@formatter:on
-
-			return players;
 		} catch (IllegalStateException e) {
 			/*
 			 * Thrown if the JSON is not structured as expected (e.g. if there's

@@ -38,7 +38,7 @@ public class RupeeTransactionPageScraper {
 	private static final Logger logger = Logger.getLogger(RupeeTransactionPageScraper.class.getName());
 
 	private final Pattern balanceRegex = Pattern.compile("^Your balance: ([\\d,]+)$", Pattern.CASE_INSENSITIVE);
-	private final Pattern amountRegex = Pattern.compile("^(-|\\+)\\s*([\\d,]+)$", Pattern.CASE_INSENSITIVE);
+	private final Pattern amountRegex = Pattern.compile("^([-+])\\s*([\\d,]+)$", Pattern.CASE_INSENSITIVE);
 
 	/*
 	 * English month names are always used, no matter where the player lives.
@@ -122,9 +122,14 @@ public class RupeeTransactionPageScraper {
 							break;
 						}
 					} catch (Exception e) {
-						logger.log(Level.WARNING, scribe.getClass().getSimpleName() + " scribe threw an excception. Skipping it.", e);
+						logger.log(Level.WARNING, scribe.getClass().getSimpleName() + " scribe threw an exception. Skipping it.", e);
 					}
 				}
+
+				/*
+				 * No scribes where found for this transaction, so just parse it
+				 * as a plain RupeeTransaction object.
+				 */
 				if (builder == null) {
 					builder = new RupeeTransaction.Builder<>();
 				}

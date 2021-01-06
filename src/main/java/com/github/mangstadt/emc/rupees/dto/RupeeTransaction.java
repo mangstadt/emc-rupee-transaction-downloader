@@ -94,7 +94,7 @@ public class RupeeTransaction {
 		private int amount, balance;
 
 		@SuppressWarnings("unchecked")
-		private T this_ = (T) this;
+		private final T this_ = (T) this;
 
 		public Builder() {
 			//empty

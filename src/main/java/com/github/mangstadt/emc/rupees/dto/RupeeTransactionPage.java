@@ -42,32 +42,22 @@ public class RupeeTransactionPage {
 	}
 
 	/**
-	 * <p>
-	 * Gets the date of the first transaction that is listed on the page. Note
-	 * that, because transactions are listed in descending order, the following
-	 * statement is true:
-	 * <p>
-	 * <p>
-	 * <code>{@link #getFirstTransactionDate()}.after(
-	 * {@link #getLastTransactionDate()}) == true</code>
-	 * </p>
-	 * @return the transaction date
+	 * Gets the date of the transaction that is listed first on the page.
+	 * Because transactions are listed in descending order, this is the <b>most
+	 * recent</b> transaction on the page.
+	 * @return the date of the first transaction or null if no transactions
+	 * could be found on the page
 	 */
 	public LocalDateTime getFirstTransactionDate() {
 		return transactions.isEmpty() ? null : transactions.get(0).getTs();
 	}
 
 	/**
-	 * <p>
-	 * Gets the date of the last transaction that is listed on the page. Note
-	 * that, because transactions are listed in descending order, the following
-	 * statement is true:
-	 * <p>
-	 * <p>
-	 * <code>{@link #getFirstTransactionDate()}.after(
-	 * {@link #getLastTransactionDate()}) == true</code>
-	 * </p>
-	 * @return the transaction date
+	 * Gets the date of the transaction that is listed first on the page.
+	 * Because transactions are listed in descending order, this is the
+	 * <b>oldest</b> transaction on the page.
+	 * @return the date of the last transaction or null if no transactions
+	 * could be found on the page
 	 */
 	public LocalDateTime getLastTransactionDate() {
 		return transactions.isEmpty() ? null : transactions.get(transactions.size() - 1).getTs();

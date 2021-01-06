@@ -9,7 +9,7 @@ public enum EmcServer {
 
 	private final String display;
 
-	private EmcServer(String display) {
+	EmcServer(String display) {
 		this.display = display;
 	}
 

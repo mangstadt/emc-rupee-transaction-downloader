@@ -90,8 +90,8 @@ public class RupeeTransactionReader implements Closeable {
 		stopAtPage = builder.stopPage;
 		stopAtDate = builder.stopDate;
 
-		EmcWebsiteConnection connection = pageSource.createSession();
-		RupeeTransactionPage firstPage = pageSource.getPage(1, connection);
+		EmcWebsiteConnection firstPageConnection = pageSource.createSession();
+		RupeeTransactionPage firstPage = pageSource.getPage(1, firstPageConnection);
 
 		/*
 		 * Get the date of the latest transaction so we know when we've reached
@@ -107,7 +107,7 @@ public class RupeeTransactionReader implements Closeable {
 			if (startAtDate.isAfter(firstPage.getLastTransactionDate())) {
 				startAtPage = 1;
 			} else {
-				startAtPage = findStartPage(startAtDate, firstPage.getTotalPages(), connection);
+				startAtPage = findStartPage(startAtDate, firstPage.getTotalPages(), firstPageConnection);
 			}
 		}
 
@@ -115,18 +115,16 @@ public class RupeeTransactionReader implements Closeable {
 		pageCounter = new AtomicInteger(startAtPage);
 		nextPageToPutInQueue = startAtPage;
 		for (int i = 0; i < threads; i++) {
-			ScrapeThread thread = new ScrapeThread(connection);
-			thread.setDaemon(true);
-			thread.setName(getClass().getSimpleName() + "-" + i);
-			thread.start();
-
 			/*
 			 * Ensure that each thread has its own connection object. Re-use the
 			 * connection object we created above for the first thread.
 			 */
-			if (i < threads - 1) {
-				connection = pageSource.recreateConnection(connection);
-			}
+			EmcWebsiteConnection connection = (i == 0) ? firstPageConnection : pageSource.recreateConnection(firstPageConnection);
+
+			ScrapeThread thread = new ScrapeThread(connection);
+			thread.setDaemon(true);
+			thread.setName(getClass().getSimpleName() + "-" + i);
+			thread.start();
 		}
 	}
 
@@ -138,7 +136,8 @@ public class RupeeTransactionReader implements Closeable {
 	 * @param totalPages the total number of rupee transaction pages
 	 * @param connection the website connection
 	 * @return the page number
-	 * @throws IOException
+	 * @throws IOException if there's a problem downloading a rupee transaction
+	 * page
 	 */
 	private int findStartPage(LocalDateTime startDate, int totalPages, EmcWebsiteConnection connection) throws IOException {
 		int curPage = totalPages / 2;
@@ -168,7 +167,7 @@ public class RupeeTransactionReader implements Closeable {
 	 * Gets the next rupee transaction. Transactions are returned in descending
 	 * order.
 	 * @return the next transaction or null if there are no more transactions
-	 * @throws IOException
+	 * @throws IOException if there's a problem downloading the transactions
 	 */
 	public RupeeTransaction next() throws IOException {
 		if (endOfStream) {
@@ -188,21 +187,13 @@ public class RupeeTransactionReader implements Closeable {
 				} catch (InterruptedException e) {
 					close();
 					endOfStream = true;
-					synchronized (this) {
-						if (thrown != null) {
-							throw thrown;
-						}
-					}
+					throwExceptionIfAnyWereCaught();
 					return null;
 				}
 
 				if (currentPage == noMoreElements) {
 					endOfStream = true;
-					synchronized (this) {
-						if (thrown != null) {
-							throw thrown;
-						}
-					}
+					throwExceptionIfAnyWereCaught();
 					return null;
 				}
 
@@ -252,6 +243,12 @@ public class RupeeTransactionReader implements Closeable {
 		}
 	}
 
+	private synchronized void throwExceptionIfAnyWereCaught() throws IOException {
+		if (thrown != null) {
+			throw thrown;
+		}
+	}
+
 	/**
 	 * Gets the player's total rupee balance. This value is updated every time a
 	 * new transaction page is read. It should not change unless more
@@ -294,7 +291,7 @@ public class RupeeTransactionReader implements Closeable {
 						break;
 					}
 
-					RupeeTransactionPage transactionPage = null;
+					RupeeTransactionPage transactionPage;
 					try {
 						transactionPage = pageSource.getPage(pageNumber, connection);
 					} catch (ConnectException | SocketTimeoutException e) {
@@ -420,7 +417,7 @@ public class RupeeTransactionReader implements Closeable {
 	}
 
 	@Override
-	public synchronized void close() throws IOException {
+	public synchronized void close() {
 		cancel = true;
 		queue.add(noMoreElements);
 	}
@@ -430,8 +427,8 @@ public class RupeeTransactionReader implements Closeable {
 	 * @author Michael Angstadt
 	 */
 	public static class Builder {
-		private PageSource pageSource;
-		private List<RupeeTransactionScribe<?>> scribes = new ArrayList<>();
+		private final PageSource pageSource;
+		private final List<RupeeTransactionScribe<?>> scribes = new ArrayList<>();
 		private RupeeTransactionPageScraper pageScraper;
 		private Integer startPage = 1, stopPage;
 		private LocalDateTime startDate, stopDate;
@@ -454,7 +451,7 @@ public class RupeeTransactionReader implements Closeable {
 		public Builder(CookieStore cookieStore) {
 			pageSource = new PageSourceImpl() {
 				@Override
-				public EmcWebsiteConnection createSession() throws IOException {
+				public EmcWebsiteConnection createSession() {
 					return new EmcWebsiteConnectionImpl(cookieStore);
 				}
 			};
